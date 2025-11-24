@@ -1,0 +1,8 @@
+.bg-orange {
+    background: #ff6b35 !important;
+}
+.table thead th {
+    background: #ff6b35;
+    color: white;
+    border: none;
+}

@@ -1,0 +1,17 @@
+.bg-orange {
+    background: #ff6b35 !important;
+}
+.bg-orange-light {
+    background: #ff8e53 !important;
+}
+.campos-especificos {
+    transition: all 0.3s ease;
+}
+.card-dashboard {
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border: none;
+}
+.card-dashboard:hover {
+    transform: translateY(-5px);
+}

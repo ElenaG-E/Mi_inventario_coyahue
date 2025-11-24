@@ -1,0 +1,18 @@
+.bg-orange {
+    background: #ff6b35 !important;
+}
+.card-title i {
+    color: white;
+}
+.timeline-marker {
+    width: 12px;
+    height: 12px;
+    margin-top: 5px;
+}
+.timeline-content h6 {
+    font-weight: 600;
+}
+.badge {
+    font-size: 0.85rem;
+    padding: 0.4em 0.6em;
+}

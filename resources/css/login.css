@@ -1,0 +1,47 @@
+.login-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #ff6b35 0%, #ff8e53 100%);
+}
+.login-card {
+    border-radius: 15px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+    border: none;
+    background: white;
+}
+.logo-login {
+    max-height: 120px;
+}
+.btn-login {
+    background: linear-gradient(135deg, #ff6b35 0%, #ff8e53 100%);
+    border: none;
+    color: white;
+    font-weight: 600;
+    padding: 12px;
+    transition: all 0.3s;
+}
+.btn-login:hover {
+    background: linear-gradient(135deg, #e55a2b 0%, #e57a42 100%);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255, 107, 53, 0.4);
+}
+.form-control:focus {
+    border-color: #ff6b35;
+    box-shadow: 0 0 0 0.3rem rgba(255, 107, 53, 0.25);
+}
+.input-group-text {
+    background-color: #f8f9fa;
+    border-color: #ced4da;
+}
+.card-title {
+    color: #ff6b35;
+    font-weight: 700;
+}
+.forgot-link {
+    color: #ff6b35;
+    text-decoration: none;
+}
+.forgot-link:hover {
+    color: #e55a2b;
+    text-decoration: underline;
+}

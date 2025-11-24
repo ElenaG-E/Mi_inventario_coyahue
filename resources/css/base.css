@@ -1,0 +1,111 @@
+@import './base.css';
+
+/* ==================================================================== */
+/* Carga de Tailwind CSS (para utilidades responsive) */
+/* NOTA: Estas directivas deben ir antes de los estilos fijos para evitar conflictos. */
+/* ==================================================================== */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==================================================================== */
+/* Estilos Específicos del Layout (CORREGIDOS) */
+/* ==================================================================== */
+
+:root {
+    --sidebar-width: 250px;
+    --coyahue-orange: #ff6b35; /* Color corporativo */
+    --coyahue-dark: #343a40;
+}
+
+.bg-orange {
+    background-color: var(--coyahue-orange) !important;
+}
+
+/* 1. LAYOUT WRAPPER (Contenedor principal) */
+.layout-wrapper {
+    min-height: 100vh;
+    width: 100%;
+    /* Desactivar flex en el contenedor principal si no es necesario para evitar interferencia */
+    display: block; 
+}
+
+/* 2. SIDEBAR (Barra Lateral) */
+.sidebar {
+    width: var(--sidebar-width);
+    background-color: var(--coyahue-dark);
+    color: #fff;
+    transition: all 0.3s ease;
+    
+    /* Fijo y a la izquierda para "correr el menú hacia atrás" */
+    position: fixed; 
+    left: 0;
+    top: 0;
+    height: 100%;
+    z-index: 1000;
+    overflow-y: auto;
+}
+
+.sidebar a {
+    color: #c0c4c8;
+    padding: 1rem;
+    display: block;
+    transition: all 0.2s;
+}
+
+.sidebar a:hover {
+    background-color: #495057;
+    color: white;
+}
+
+.sidebar a.active {
+    background-color: var(--coyahue-orange);
+    color: white;
+    font-weight: bold;
+    border-left: 5px solid white;
+}
+
+/* Estado Colapsado: Mover fuera de la pantalla */
+.sidebar.collapsed {
+    width: 0;
+    left: calc(0px - var(--sidebar-width)); /* Mueve el sidebar fuera de la pantalla */
+}
+
+/* 3. MAIN CONTENT (Contenido Principal) */
+.main-content {
+    /* Empujar el contenido a la derecha para dejar espacio al sidebar */
+    margin-left: var(--sidebar-width); 
+    width: calc(100% - var(--sidebar-width)); /* Ajustar ancho total */
+    transition: margin-left 0.3s ease, width 0.3s ease;
+    flex-grow: 1;
+}
+
+/* Estado del Contenido cuando el Sidebar está colapsado */
+.main-content.expanded {
+    margin-left: 0; /* Permite que el contenido ocupe todo el ancho */
+    width: 100%;
+}
+
+/* Responsividad (Móviles) */
+@media (max-width: 768px) {
+    .sidebar {
+        /* En móvil, el sidebar siempre inicia colapsado (oculto) */
+        left: calc(0px - var(--sidebar-width));
+        width: var(--sidebar-width);
+    }
+    .sidebar.collapsed {
+        left: calc(0px - var(--sidebar-width)); /* Oculto por defecto */
+    }
+    .sidebar:not(.collapsed) {
+        left: 0; /* Muestra el menú al hacer clic */
+    }
+
+    .main-content {
+        margin-left: 0; /* En móvil, el contenido no se desplaza */
+        width: 100%;
+    }
+    .main-content.expanded {
+        margin-left: 0;
+        width: 100%;
+    }
+}

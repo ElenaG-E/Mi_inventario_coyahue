@@ -1,0 +1,9 @@
+.bg-orange {
+    background: #ff6b35 !important;
+}
+.card-header i {
+    color: white;
+}
+.card .card-header.bg-orange + .card-body .form-label {
+    font-weight: 500;
+}

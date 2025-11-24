@@ -1,0 +1,34 @@
+.bg-orange {
+    background: #ff6b35 !important;
+}
+.card-title i,
+.card-header i {
+    color: white;
+}
+.alert-info strong {
+    color: #0d6efd;
+}
+.form-text {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+.badge {
+    font-size: 0.85rem;
+    padding: 0.4em 0.6em;
+}
+.alert-warning {
+    background-color: #fff3cd;
+    border-color: #ffeeba;
+    color: #856404;
+}
+.btn-outline-secondary,
+.btn-outline-primary {
+    font-weight: 500;
+}
+.btn-primary {
+    background: linear-gradient(135deg, #ff6b35 0%, #ff8e53 100%);
+    border: none;
+}
+.btn-primary:hover {
+    background: linear-gradient(135deg, #e55a2b 0%, #e57a42 100%);
+}
