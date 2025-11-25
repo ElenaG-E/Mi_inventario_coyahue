@@ -4,6 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Documento; // Asegurar que Documento esté importado
+use App\Models\Asignacion; // Asegurar que Asignacion esté importado
+use App\Models\Movimiento; // Asegurar que Movimiento esté importado
+use App\Models\EspecificacionTecnica; // Asegurar que EspecificacionTecnica esté importado
+// Aseguramos que Ticket y LogEquipo existan si los usas en el namespace global
+// use App\Models\Ticket; 
+// use App\Models\LogEquipo; 
+
 
 class Equipo extends Model
 {
@@ -94,14 +102,26 @@ class Equipo extends Model
         return $this->hasMany(Movimiento::class, 'equipo_id');
     }
 
-    // Registrar movimiento
-    public function registrarMovimiento($tipo, $comentario = null)
+    /**
+     * Registra un nuevo movimiento en la tabla de historial (Automatizado).
+     *
+     * @param string $tipo Tipo de movimiento (Ej: Asignación, Cambio de Sucursal, Baja)
+     * @param string|null $comentario Comentario descriptivo
+     * @return \App\Models\Movimiento
+     */
+    public function registrarMovimiento(string $tipo, ?string $comentario = null)
     {
+        // Obtiene la sucursal actual del equipo (FK de la tabla equipos)
+        $currentSucursalId = $this->sucursal_id ?? null; 
+        
         return $this->movimientos()->create([
+            'equipo_id'        => $this->id,
+            'insumo_id'        => null, // Es un equipo, insumo_id debe ser NULL
             'tipo_movimiento'  => $tipo,
             'comentario'       => $comentario,
-            'usuario_id'       => auth()->id(),
+            'usuario_id'       => auth()->id(), // Usuario que realiza el movimiento
             'fecha_movimiento' => now(),
+            'sucursal_id'      => $currentSucursalId, // Registrar la ubicación en el momento del movimiento
         ]);
     }
 
@@ -118,11 +138,13 @@ class Equipo extends Model
         );
     }
 
+    // Nota: Asume que el modelo Ticket existe.
     public function tickets()
     {
         return $this->hasMany(Ticket::class, 'equipo_id');
     }
 
+    // Nota: Asume que el modelo LogEquipo existe.
     public function logs()
     {
         return $this->hasMany(LogEquipo::class, 'equipo_id');

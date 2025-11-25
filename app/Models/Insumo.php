@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Insumo extends Model
 {
     use HasFactory;
-
+    
+    // Propiedades y fillable existentes
     protected $table = 'insumos';
 
     protected $fillable = [
@@ -21,8 +22,8 @@ class Insumo extends Model
         'sucursal_id',
         'precio',
     ];
-
-    public $timestamps = false;
+    
+    public $timestamps = false; // Asumido
 
     /* ============================
      * Relaciones base
@@ -93,14 +94,26 @@ class Insumo extends Model
         return $this->hasMany(Movimiento::class, 'insumo_id');
     }
 
-    // Registrar movimiento
-    public function registrarMovimiento($tipo, $comentario = null)
+    /**
+     * Registra un nuevo movimiento en la tabla de historial.
+     *
+     * @param string $tipo Tipo de movimiento (Ej: Asignación, Recepción, Baja)
+     * @param string|null $comentario Comentario descriptivo
+     * @return \App\Models\Movimiento
+     */
+    public function registrarMovimiento(string $tipo, ?string $comentario = null)
     {
+        // Captura la sucursal actual del insumo para el registro del movimiento
+        $currentSucursalId = $this->sucursal_id ?? null;
+        
         return $this->movimientos()->create([
+            'equipo_id'        => null, // El insumo no es un equipo
+            'insumo_id'        => $this->id,
             'tipo_movimiento'  => $tipo,
             'comentario'       => $comentario,
-            'usuario_id'       => auth()->id(),
+            'usuario_id'       => auth()->id(), 
             'fecha_movimiento' => now(),
+            'sucursal_id'      => $currentSucursalId, // <--- CORREGIDO: Se añade la FK de sucursal
         ]);
     }
 }

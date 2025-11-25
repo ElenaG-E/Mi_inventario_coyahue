@@ -1,8 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\RegistroEquipoController; // <--- Queda solo la primera
-
+use App\Http\Controllers\RegistroEquipoController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
@@ -34,6 +33,36 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
 // Rutas protegidas por autenticación
 Route::middleware(['auth'])->group(function () {
 
+    // 🔧 RUTA TEMPORAL: Regenerar QR de todos los equipos
+    Route::get('/admin/regenerar-qr-equipos', function () {
+        // Solo permitir si está autenticado
+        if (!auth()->check()) {
+            abort(403, 'No autorizado');
+        }
+        
+        $equipos = \App\Models\Equipo::all();
+        $actualizados = 0;
+        $errores = [];
+        
+        foreach ($equipos as $equipo) {
+            try {
+                $qrUrl = route('inventario.equipo', $equipo->id);
+                $equipo->update(['qr_code' => $qrUrl]);
+                $actualizados++;
+            } catch (\Exception $e) {
+                $errores[] = "Equipo ID {$equipo->id}: {$e->getMessage()}";
+            }
+        }
+        
+        return response()->json([
+            'success' => true,
+            'message' => "Se regeneraron {$actualizados} códigos QR correctamente",
+            'equipos_actualizados' => $actualizados,
+            'total_equipos' => $equipos->count(),
+            'errores' => $errores
+        ]);
+    })->name('admin.regenerar-qr');
+
     // Perfil
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -44,7 +73,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/inventario', [InventarioController::class, 'index'])->name('inventario');
     Route::get('/inventario/autocomplete', [InventarioController::class, 'autocomplete'])->name('inventario.autocomplete');
 
-    // ✅ Nueva ruta para asignaciones múltiples dentro de InventarioController
+    // Rutas de Reporte
+    Route::get('/inventario/exportar', [InventarioController::class, 'exportar'])->name('inventario.exportar');
+    
+    // Asignaciones múltiples
     Route::post('/inventario/asignaciones', [InventarioController::class, 'storeAsignaciones'])->name('inventario.asignaciones');
 
     // Detalle de equipo e insumo

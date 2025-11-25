@@ -5,15 +5,13 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-// CORRECCIÓN: El nombre de la clase DEBE ser plural (EstadosEquipoSeeder) para coincidir con la llamada en DatabaseSeeder.php
 class EstadosEquipoSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // Los datos que ya definimos
+        // TRUNCATE es necesario si no se elimina la tabla o si hay fallos previos.
+        DB::table('estados_equipo')->truncate(); 
+
         DB::table('estados_equipo')->insert([
             ['id' => 1, 'nombre' => 'Disponible'],
             ['id' => 2, 'nombre' => 'Asignado'],

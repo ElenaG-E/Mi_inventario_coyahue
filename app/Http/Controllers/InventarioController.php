@@ -6,40 +6,46 @@ use App\Models\Equipo;
 use App\Models\Insumo;
 use App\Models\TipoEquipo;
 use App\Models\EstadoEquipo;
-use App\Models\Proveedor;
+use App\Models\Proveedor; // <-- CORRECCIÓN: De App->Models a App\Models
 use App\Models\Sucursal;
 use App\Models\Usuario;
-use App\Models\Asignacion;
-use App\Models\AsignacionInsumo;
+use App\Models\Asignacion; // <-- CORRECCIÓN: De App->Models a App\Models
+use App\Models\AsignacionInsumo; // <-- CORRECCIÓN: De App->Models a App\Models
+
+// Componentes de Laravel
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log; 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Response;
+use Illuminate\Routing\Controller;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;  // ← AGREGAR ESTA LÍNEA
 
 class InventarioController extends Controller
 {
+    /**
+     * Muestra el listado de inventario con filtros aplicados.
+     */
     public function index(Request $request)
     {
-        $categoria   = $request->get('categoria', '');
-        $tipo        = $request->get('tipo', '');
-        $estado      = $request->get('estado', '');
-        $usuario     = $request->get('usuario', '');
-        $proveedor   = $request->get('proveedor', '');
-        $sucursal    = $request->get('sucursal', '');
-        $precioMin   = $request->get('precio_min', '');
-        $precioMax   = $request->get('precio_max', '');
-        $fechaTipo   = $request->get('fecha_tipo', 'registro');
-        $fechaDesde  = $request->get('fecha_desde', '');
-        $fechaHasta  = $request->get('fecha_hasta', '');
-        $buscar      = $request->get('buscar', '');
+        $categoria     = $request->get('categoria', '');
+        $tipo          = $request->get('tipo', '');
+        $estado        = $request->get('estado', '');
+        $usuario       = $request->get('usuario', '');
+        $proveedor     = $request->get('proveedor', '');
+        $sucursal      = $request->get('sucursal', '');
+        $precioMin     = $request->get('precio_min', '');
+        $precioMax     = $request->get('precio_max', '');
+        $fechaTipo     = $request->get('fecha_tipo', 'registro');
+        $fechaDesde    = $request->get('fecha_desde', '');
+        $fechaHasta    = $request->get('fecha_hasta', '');
+        $buscar        = $request->get('buscar', '');
 
-        // Correct precioMin and precioMax to prevent inverted ranges
-        if ($precioMin !== '' && $precioMax !== '') {
-            if ($precioMin > $precioMax) {
-                // Swap values
-                $temp = $precioMin;
-                $precioMin = $precioMax;
-                $precioMax = $temp;
-            }
+        // Asegurar que precioMin y precioMax no estén invertidos
+        if ($precioMin !== '' && $precioMax !== '' && $precioMin > $precioMax) {
+            [$precioMin, $precioMax] = [$precioMax, $precioMin];
         }
 
+        // --- Consulta de EQUIPOS ---
         $equipos = Equipo::with(['tipoEquipo','estadoEquipo','proveedor','usuarioAsignado.usuario','sucursal'])
             ->when($tipo, fn($q) => $q->whereHas('tipoEquipo', fn($t) => $t->where('nombre', $tipo)))
             ->when($estado, function($q) use ($estado) {
@@ -73,6 +79,7 @@ class InventarioController extends Controller
             ->orderBy('fecha_registro','desc')
             ->get();
 
+        // --- Consulta de INSUMOS ---
         $insumos = Insumo::with(['estadoEquipo','proveedor','usuarioAsignado.usuario','sucursal'])
             ->when($tipo, fn($q) => $q->where('nombre', $tipo))
             ->when($estado, function($q) use ($estado) {
@@ -104,7 +111,8 @@ class InventarioController extends Controller
             ->orderBy('fecha_registro','desc')
             ->get();
 
-        $tipos          = TipoEquipo::pluck('nombre');
+        // --- Datos para los selectores de filtro ---
+        $tipos          = TipoEquipo::pluck('nombre')->unique();
         $nombresInsumos = Insumo::pluck('nombre')->unique();
         $estados        = EstadoEquipo::all();
         $usuarios       = Usuario::all();
@@ -124,6 +132,9 @@ class InventarioController extends Controller
         ));
     }
 
+    /**
+     * Autocompletado del buscador principal.
+     */
     public function autocomplete(Request $request)
     {
         $term = trim($request->get('term', ''));
@@ -136,129 +147,37 @@ class InventarioController extends Controller
         $results = [];
 
         try {
-            // Buscar marcas únicas
-            $marcas = Equipo::where('marca', 'LIKE', $termLike)
-                ->distinct()
-                ->pluck('marca')
-                ->take(5);
-
-            foreach ($marcas as $marca) {
-                $results[] = [
-                    'label' => $marca,
-                    'value' => $marca,
-                    'tipo'  => 'marca',
-                    'campo' => 'buscar',
-                    'id'    => null
-                ];
-            }
-
-            // Buscar modelos únicos
-            $modelos = Equipo::where('modelo', 'LIKE', $termLike)
-                ->distinct()
-                ->pluck('modelo')
-                ->take(5);
-
-            foreach ($modelos as $modelo) {
-                $results[] = [
-                    'label' => $modelo,
-                    'value' => $modelo,
-                    'tipo'  => 'modelo',
-                    'campo' => 'buscar',
-                    'id'    => null
-                ];
-            }
-
-            // Buscar tipos de equipo
-            $tiposEquipo = TipoEquipo::where('nombre', 'LIKE', $termLike)
-                ->limit(5)
+            // Búsquedas combinadas (Marca, Modelo, Tipo, Estado, Proveedor, Sucursal, Usuario)
+            $equipos = Equipo::select('marca', 'modelo')->where('marca', 'LIKE', $termLike)
+                ->orWhere('modelo', 'LIKE', $termLike)
                 ->get();
-
-            foreach ($tiposEquipo as $tipo) {
-                $results[] = [
-                    'label' => $tipo->nombre,
-                    'value' => $tipo->nombre,
-                    'tipo'  => 'tipo',
-                    'campo' => 'tipo',
-                    'id'    => null
-                ];
+            
+            foreach ($equipos as $equipo) {
+                $results[] = ['label' => $equipo->marca, 'value' => $equipo->marca, 'tipo' => 'marca', 'campo' => 'buscar'];
+                $results[] = ['label' => $equipo->modelo, 'value' => $equipo->modelo, 'tipo' => 'modelo', 'campo' => 'buscar'];
             }
 
-            // Buscar en insumos - nombre
-            $insumos = Insumo::where('nombre', 'LIKE', $termLike)
-                ->limit(10)
-                ->get();
+            $modelosDeBusqueda = [TipoEquipo::class => 'tipo', EstadoEquipo::class => 'estado', Proveedor::class => 'proveedor', Sucursal::class => 'sucursal', Usuario::class => 'usuario'];
+            
+            foreach ($modelosDeBusqueda as $modelClass => $type) {
+                $items = $modelClass::where('nombre', 'LIKE', $termLike)->limit(5)->get();
+                foreach ($items as $item) {
+                    $results[] = [
+                        'label' => $item->nombre,
+                        'value' => $item->nombre,
+                        'tipo' => $type,
+                        'campo' => $type == 'tipo' || $type == 'estado' || $type == 'proveedor' || $type == 'sucursal' || $type == 'usuario' ? $type : 'buscar'
+                    ];
+                }
+            }
 
+            // Búsqueda en insumos - nombre
+            $insumos = Insumo::where('nombre', 'LIKE', $termLike)->limit(10)->get();
             foreach ($insumos as $insumo) {
-                $results[] = [
-                    'label' => $insumo->nombre,
-                    'value' => $insumo->nombre,
-                    'tipo'  => 'insumo',
-                    'campo' => 'buscar',
-                    'id'    => $insumo->id
-                ];
+                $results[] = ['label' => $insumo->nombre, 'value' => $insumo->nombre, 'tipo' => 'insumo', 'campo' => 'buscar', 'id' => $insumo->id];
             }
 
-            // Buscar estados
-            $estados = EstadoEquipo::where('nombre', 'LIKE', $termLike)
-                ->limit(5)
-                ->get();
-
-            foreach ($estados as $estado) {
-                $results[] = [
-                    'label' => $estado->nombre,
-                    'value' => $estado->nombre,
-                    'tipo'  => 'estado',
-                    'campo' => 'estado',
-                    'id'    => null
-                ];
-            }
-
-            // Buscar proveedores
-            $proveedores = Proveedor::where('nombre', 'LIKE', $termLike)
-                ->limit(5)
-                ->get();
-
-            foreach ($proveedores as $proveedor) {
-                $results[] = [
-                    'label' => $proveedor->nombre,
-                    'value' => $proveedor->nombre,
-                    'tipo'  => 'proveedor',
-                    'campo' => 'proveedor',
-                    'id'    => null
-                ];
-            }
-
-            // Buscar sucursales
-            $sucursales = Sucursal::where('nombre', 'LIKE', $termLike)
-                ->limit(5)
-                ->get();
-
-            foreach ($sucursales as $sucursal) {
-                $results[] = [
-                    'label' => $sucursal->nombre,
-                    'value' => $sucursal->nombre,
-                    'tipo'  => 'sucursal',
-                    'campo' => 'sucursal',
-                    'id'    => null
-                ];
-            }
-
-            // Buscar usuarios
-            $usuarios = Usuario::where('nombre', 'LIKE', $termLike)
-                ->limit(5)
-                ->get();
-
-            foreach ($usuarios as $usuario) {
-                $results[] = [
-                    'label' => $usuario->nombre,
-                    'value' => $usuario->nombre,
-                    'tipo'  => 'usuario',
-                    'campo' => 'usuario',
-                    'id'    => null
-                ];
-            }
-
-            // Eliminar duplicados
+            // Limpiar y limitar resultados
             $uniqueResults = [];
             $seen = [];
             foreach ($results as $result) {
@@ -270,7 +189,6 @@ class InventarioController extends Controller
             }
 
             $finalResults = array_slice($uniqueResults, 0, 20);
-
             return response()->json($finalResults);
 
         } catch (\Exception $e) {
@@ -279,11 +197,61 @@ class InventarioController extends Controller
         }
     }
 
+    /**
+     * Maneja la solicitud de exportación de reportes desde el modal.
+     * Genera una descarga simulada para verificar el flujo de la ruta.
+     * @param \Illuminate\Http\Request $request
+     * @return \Symfony\Component\HttpFoundation\Response|\Illuminate\Http\JsonResponse
+     */
+    public function exportar(Request $request)
+    {
+        $tipoReporte = $request->input('tipo_reporte');
+        $formato = $request->input('formato'); // 'pdf' o 'excel'
+        
+        if (empty($tipoReporte) || empty($formato)) {
+            return response()->json(['error' => 'Debe seleccionar el tipo y formato del reporte.'], 400);
+        }
+
+        // Simulación del contenido del archivo
+        $content = "Reporte de Inventario Coyahue\n";
+        $content .= "Tipo: " . strtoupper($tipoReporte) . "\n";
+        $content .= "Formato solicitado: " . strtoupper($formato) . "\n";
+        $content .= "Filtros aplicados: " . json_encode($request->except(['_token', 'tipo_reporte', 'formato']));
+        
+        // ----------------------------------------------------
+        // LÓGICA DE SIMULACIÓN DE DESCARGA
+        // ----------------------------------------------------
+        $filename = "reporte_{$tipoReporte}_" . now()->format('Ymd_His') . ".txt";
+        
+        if ($formato === 'pdf') {
+            $filename = "reporte_{$tipoReporte}_" . now()->format('Ymd_His') . ".pdf";
+            $mimeType = 'application/pdf'; // Tipo MIME correcto para PDF
+        } elseif ($formato === 'excel') {
+            $filename = "reporte_{$tipoReporte}_" . now()->format('Ymd_His') . ".xlsx";
+            $mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'; // Tipo MIME para Excel
+        } else {
+             // Fallback para tipos desconocidos
+            $mimeType = 'application/octet-stream';
+        }
+
+        Log::info('Reporte solicitado', ['tipo' => $tipoReporte, 'formato' => $formato, 'usuario_id' => auth()->id()]);
+
+        // Simulación: Devuelve el contenido como un archivo para forzar la descarga.
+        return Response::make($content, 200, [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
+    }
+
+    /**
+     * Aplica asignaciones, desasignaciones o cambios de sucursal de forma masiva.
+     */
     public function storeAsignaciones(Request $request)
     {
         $request->validate([
             'tipo_asignacion' => 'required|in:usuario,sucursal,ninguno',
             'items' => 'required|array',
+            'destino_id' => 'nullable|integer', // Requerido solo si tipo_asignacion != ninguno
         ]);
 
         $tipoAsignacion = $request->tipo_asignacion;
@@ -291,29 +259,134 @@ class InventarioController extends Controller
         $items = $request->items;
 
         try {
+            DB::beginTransaction(); // Inicia la transacción para operaciones masivas
+            
             foreach ($items as $itemId) {
-                // Verificar si es equipo
+                // Asumimos que los IDs son únicos y pueden ser equipos o insumos.
                 $equipo = Equipo::find($itemId);
+                
                 if ($equipo) {
                     $this->procesarAsignacionEquipo($equipo, $tipoAsignacion, $destinoId);
-                    continue;
-                }
-
-                // Verificar si es insumo
-                $insumo = Insumo::find($itemId);
-                if ($insumo) {
-                    $this->procesarAsignacionInsumo($insumo, $tipoAsignacion, $destinoId);
+                } else {
+                    $insumo = Insumo::find($itemId);
+                    if ($insumo) {
+                        $this->procesarAsignacionInsumo($insumo, $tipoAsignacion, $destinoId);
+                    }
                 }
             }
 
+            DB::commit(); // Confirma las operaciones
+            
             $mensaje = $this->generarMensajeExito($tipoAsignacion, count($items));
             return redirect()->route('inventario')->with('success', $mensaje);
 
         } catch (\Exception $e) {
-            \Log::error('Error en asignaciones masivas: ' . $e->getMessage());
+            DB::rollBack(); // Deshace los cambios si algo falla
+            Log::error('Error en asignaciones masivas: ' . $e->getMessage());
             return redirect()->route('inventario')->with('error', 'Error al procesar las asignaciones.');
         }
     }
+
+    /**
+     * Muestra el detalle del equipo con QR generado dinámicamente
+     */
+    public function detalleEquipo($id)
+    {
+        // Cargar equipo y todas las relaciones necesarias
+        $equipo = Equipo::with([
+            'tipoEquipo',
+            'proveedor',
+            'estadoEquipo',
+            'sucursal',
+            'especificacionesTecnicas', // Cargamos las especificaciones IA/técnicas
+            'movimientos' => function($query) {
+                // CORRECCIÓN: Usar 'fecha_movimiento'
+                $query->orderBy('fecha_movimiento', 'desc'); 
+            },
+            'asignaciones' => function($query) {
+                $query->with('usuario')->orderBy('fecha_asignacion', 'desc');
+            }
+        ])->findOrFail($id);
+
+        // Obtener la última asignación activa
+        $usuarioAsignado = $equipo->asignaciones()->whereNull('fecha_fin')->first();
+        $equipo->usuarioAsignado = $usuarioAsignado; // Adjuntar al modelo
+
+        // Obtener datos adicionales para el modal de gestión
+        $estados = EstadoEquipo::all();
+        $usuarios = Usuario::all();
+        $sucursales = Sucursal::all();
+        $proveedores = Proveedor::all();
+
+        // Generar QR (Copia de la lógica de RegistroEquipoController)
+        $qrUrl = route('inventario.equipo', $equipo->id);
+        try {
+            $qrCode = QrCode::format('png')->size(250)->generate($qrUrl); 
+            $qrBase64 = 'data:image/png;base64,' . base64_encode($qrCode);
+        } catch (\Exception $e) {
+            Log::error("QR Generation Failed (Detalle): " . $e->getMessage());
+            $qrBase64 = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" . urlencode($qrUrl);
+        }
+
+
+        return view('detalle_equipo', compact(
+            'equipo',
+            'usuarios',
+            'estados',
+            'sucursales',
+            'proveedores',
+            'qrBase64' // <-- PASAR EL QR ALMACENADO
+        ));
+    }
+
+    /**
+     * Muestra el detalle del insumo (Se asume lógica similar para movimientos)
+     */
+    public function detalleInsumo($id)
+    {
+        $insumo = Insumo::with([
+            'estadoEquipo',
+            'proveedor',
+            'sucursal',
+            'movimientos' => function($query) {
+                 // CORRECCIÓN: Usar 'fecha_movimiento'
+                $query->orderBy('fecha_movimiento', 'desc');
+            },
+            'asignaciones' => function($query) {
+                $query->with('usuario')->orderBy('fecha_asignacion', 'desc');
+            }
+        ])->findOrFail($id);
+        
+        $usuarios = Usuario::all(); 
+        $estados = EstadoEquipo::all(); 
+        $sucursales = Sucursal::all(); 
+        $proveedores = Proveedor::all();
+
+        // Generar QR (Copia de la lógica de RegistroEquipoController)
+        $qrUrl = route('inventario.insumo', $insumo->id);
+        try {
+            $qrCode = QrCode::format('png')->size(250)->generate($qrUrl); 
+            $qrBase64 = 'data:image/png;base64,' . base64_encode($qrCode);
+        } catch (\Exception $e) {
+            Log::error("QR Generation Failed (Detalle): " . $e->getMessage());
+            $qrBase64 = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" . urlencode($qrUrl);
+        }
+
+
+        return view('detalle_insumo', compact(
+            'insumo', 
+            'usuarios', 
+            'estados', 
+            'sucursales', 
+            'proveedores',
+            'qrBase64'
+        ));
+    }
+
+
+    // =========================================================================
+    // MÉTODOS PRIVADOS AUXILIARES (para asignaciones masivas)
+    // =========================================================================
 
     private function procesarAsignacionEquipo(Equipo $equipo, $tipoAsignacion, $destinoId)
     {
@@ -449,46 +522,5 @@ class InventarioController extends Controller
         ];
         
         return $mensajes[$tipoAsignacion] ?? "Operación completada para $cantidad elementos";
-    }
-
-    public function detalleEquipo($id)
-    {
-        $equipo = Equipo::with([
-            'tipoEquipo', 
-            'estadoEquipo', 
-            'proveedor', 
-            'sucursal',
-            'usuarioAsignado.usuario',
-            'asignaciones.usuario',
-            'movimientos',
-            'documentos'
-        ])->findOrFail($id);
-        
-        $usuarios = Usuario::all();
-        $estados = EstadoEquipo::all();
-        $sucursales = Sucursal::all();
-        $proveedores = Proveedor::all();
-
-        return view('detalle_equipo', compact('equipo', 'usuarios', 'estados', 'sucursales', 'proveedores'));
-    }
-
-    public function detalleInsumo($id)
-    {
-        $insumo = Insumo::with([
-            'estadoEquipo', 
-            'proveedor', 
-            'sucursal',
-            'usuarioAsignado.usuario',
-            'asignaciones.usuario',
-            'movimientos',
-            'documentos'
-        ])->findOrFail($id);
-        
-        $usuarios = Usuario::all();
-        $estados = EstadoEquipo::all();
-        $sucursales = Sucursal::all();
-        $proveedores = Proveedor::all();
-
-        return view('detalle_insumo', compact('insumo', 'usuarios', 'estados', 'sucursales', 'proveedores'));
     }
 }

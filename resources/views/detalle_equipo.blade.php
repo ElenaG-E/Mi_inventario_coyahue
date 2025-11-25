@@ -1,6 +1,6 @@
-@extends('layouts.base')
+@extends('layouts.app') 
 
-@section('contenido')
+@section('contenido') 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">Detalle del Equipo - EQ{{ $equipo->id }}</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
@@ -11,24 +11,30 @@
 </div>
 
 <div class="row">
+    <!-- ========================= COL IZQUIERDA ========================= -->
     <div class="col-lg-8">
-        <!-- Información del Equipo -->
+
+        <!-- ================= INFO GENERAL ================= -->
         <div class="card shadow mb-4">
-            <div class="card-header text-white bg-orange">
+            <div class="card-header text-white bg-warning">
                 <h5 class="card-title mb-0">
                     <i class="fas fa-desktop me-2"></i>{{ $equipo->marca }} {{ $equipo->modelo }}
                 </h5>
             </div>
+
             <div class="card-body">
                 <div class="row">
+                    <!-- Columna 1 -->
                     <div class="col-md-6">
-                        <p><strong>Tipo:</strong> {{ $equipo->tipo->nombre ?? 'N/A' }}</p>
+                        <p><strong>Tipo:</strong> {{ $equipo->tipoEquipo->nombre ?? 'N/A' }}</p>
                         <p><strong>Marca:</strong> {{ $equipo->marca }}</p>
                         <p><strong>Modelo:</strong> {{ $equipo->modelo }}</p>
                         <p><strong>N° Serie:</strong> {{ $equipo->numero_serie }}</p>
                         <p><strong>Precio:</strong> {{ number_format($equipo->precio, 0, ',', '.') }} CLP</p>
                         <p><strong>Fecha de Compra:</strong> {{ \Carbon\Carbon::parse($equipo->fecha_compra)->format('d/m/Y') }}</p>
                     </div>
+
+                    <!-- Columna 2 -->
                     <div class="col-md-6">
                         <p><strong>Estado:</strong>
                             <span class="badge bg-{{ match($equipo->estadoEquipo->nombre) {
@@ -38,105 +44,83 @@
                                 'Baja' => 'danger',
                                 'En tránsito' => 'secondary',
                                 default => 'info',
-                            } }}">
-                                {{ $equipo->estadoEquipo->nombre }}
-                            </span>
+                            } }}">{{ $equipo->estadoEquipo->nombre }}</span>
                         </p>
+
                         <p><strong>Proveedor:</strong> {{ $equipo->proveedor->nombre ?? 'N/A' }}</p>
-                        <!-- ✅ Usuario asignado actual dentro de la tarjeta -->
-                        <p><strong>Usuario Asignado:</strong> {{ $equipo->usuarioAsignado?->usuario?->nombre ?? 'Sin asignar' }}</p>
+
+                        <p><strong>Usuario Asignado:</strong>
+                            {{ $equipo->usuarioAsignado?->usuario?->nombre ?? 'Sin asignar' }}
+                        </p>
+
                         <p><strong>Sucursal:</strong> {{ $equipo->sucursal->nombre ?? '-' }}</p>
-                        <p><strong>Fecha de Registro:</strong> {{ \Carbon\Carbon::parse($equipo->fecha_registro)->format('d/m/Y') }}</p>
+
+                        <p><strong>Fecha de Registro:</strong>
+                            {{ \Carbon\Carbon::parse($equipo->fecha_registro)->format('d/m/Y') }}
+                        </p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Garantía -->
-        @php
-            $garantia = $equipo->documentos->where('tipo', 'garantia')->sortByDesc('tiempo_garantia_meses')->first();
-        @endphp
-
-        @if($garantia)
-        <div class="card shadow mb-4">
-            <div class="card-header text-white bg-orange">
-                <h5 class="card-title mb-0"><i class="fas fa-shield-alt me-2"></i>Garantía</h5>
-            </div>
-            <div class="card-body">
-                <p><strong>Duración:</strong> {{ $garantia->tiempo_garantia_meses }} meses</p>
-                <p><strong>Vence:</strong>
-                    {{ formatearDuracionGarantia(\Carbon\Carbon::parse($equipo->fecha_compra), $garantia->tiempo_garantia_meses) }}
-                </p>
-            </div>
-        </div>
-        @endif
-
-        <!-- Documentos Asociados -->
-        @if($equipo->documentos->count())
+        <!-- ================= ESPECIFICACIONES ================= -->
+        @if($equipo->especificacionesTecnicas)
         <div class="card shadow mb-4">
             <div class="card-header text-white bg-dark">
-                <h5 class="card-title mb-0"><i class="fas fa-file-alt me-2"></i>Documentos Asociados</h5>
+                <h5 class="card-title mb-0"><i class="fas fa-cogs me-2"></i>Especificaciones Técnicas</h5>
             </div>
-            <div class="card-body">
-                <ul class="list-group">
-                    @foreach($equipo->documentos as $doc)
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <div>
-                                <i class="fas fa-file me-2"></i>{{ $doc->nombre_archivo }}
-                                <small class="text-muted">({{ ucfirst($doc->tipo) }})</small>
-                            </div>
-                            <span class="badge bg-secondary">{{ \Carbon\Carbon::parse($doc->fecha_subida)->format('d/m/Y') }}</span>
-                        </li>
-                    @endforeach
-                </ul>
-            </div>
-        </div>
-        @endif
 
-        <!-- Historial de Movimientos -->
-        <div class="card shadow mb-4">
-            <div class="card-header text-white bg-orange">
-                <h5 class="card-title mb-0"><i class="fas fa-route me-2"></i>Historial de Movimientos</h5>
-            </div>
-            <div class="card-body" style="max-height: 300px; overflow-y: auto;">
-                <div class="timeline">
-                    @forelse($equipo->movimientos as $mov)
-                        <div class="timeline-item mb-3">
-                            <div class="d-flex">
-                                <div class="timeline-marker bg-primary rounded-circle me-3"
-                                    style="width: 12px; height: 12px; margin-top: 5px;"></div>
-                                <div class="timeline-content">
-                                    <h6 class="mb-1">{{ $mov->tipo_movimiento }}</h6>
-                                    <p class="text-muted mb-1">
-                                        {{ \Carbon\Carbon::parse($mov->fecha_movimiento)->format('d/m/Y - h:i A') }}
-                                    </p>
-                                    @if($mov->comentario)
-                                        <p class="mb-0"><em>{{ $mov->comentario }}</em></p>
-                                    @endif
-                                </div>
-                            </div>
+            <div class="card-body small">
+                {{-- Resumen IA --}}
+                @if($equipo->especificacionesTecnicas->resumen_ia)
+                    <p class="mb-2">
+                        <strong>Resumen IA/Clave:</strong> 
+                        <em class="text-info">{{ $equipo->especificacionesTecnicas->resumen_ia }}</em>
+                    </p>
+                    <hr>
+                @endif
+
+                {{-- Campos --}}
+                <div class="row">
+                    @if($equipo->especificacionesTecnicas->procesador)
+                        <div class="col-md-4"><strong>Procesador:</strong> {{ $equipo->especificacionesTecnicas->procesador }}</div>
+                        <div class="col-md-4"><strong>RAM:</strong> {{ $equipo->especificacionesTecnicas->ram_gb }} GB</div>
+                        <div class="col-md-4"><strong>Almacenamiento:</strong> {{ $equipo->especificacionesTecnicas->almacenamiento_gb }} GB ({{ $equipo->especificacionesTecnicas->tipo_almacenamiento }})</div>
+                    @endif
+
+                    @if($equipo->especificacionesTecnicas->pantalla_pulgadas)
+                        <div class="col-md-4 mt-2"><strong>Pantalla:</strong> {{ $equipo->especificacionesTecnicas->pantalla_pulgadas }}"</div>
+                        <div class="col-md-4 mt-2"><strong>Resolución:</strong> {{ $equipo->especificacionesTecnicas->resolucion_pantalla }}</div>
+                        <div class="col-md-4 mt-2"><strong>Panel:</strong> {{ $equipo->especificacionesTecnicas->tipo_panel }}</div>
+                    @endif
+
+                    @if($equipo->especificacionesTecnicas->otros_datos)
+                        <div class="col-12 mt-3">
+                            <strong>Otros Detalles:</strong> {{ $equipo->especificacionesTecnicas->otros_datos }}
                         </div>
-                    @empty
-                        <p class="text-muted">No hay movimientos registrados.</p>
-                    @endforelse
+                    @endif
                 </div>
             </div>
         </div>
+        @endif
 
-        <!-- Historial de Usuarios Asignados -->
+        <!-- ================= HISTORIAL ASIGNACIONES ================= -->
         <div class="card shadow mb-4">
             <div class="card-header text-white bg-secondary">
-                <h5 class="card-title mb-0"><i class="fas fa-user-clock me-2"></i>Historial de Usuarios Asignados</h5>
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-user-clock me-2"></i>Historial de Usuarios Asignados
+                </h5>
             </div>
+
             <div class="card-body" style="max-height: 300px; overflow-y: auto;">
                 <ul class="list-group">
                     @forelse($equipo->asignaciones->sortByDesc('fecha_asignacion') as $asignacion)
                         <li class="list-group-item">
                             <strong>{{ $asignacion->usuario->nombre ?? 'Usuario desconocido' }}</strong><br>
                             <small class="text-muted">
-                                Desde {{ \Carbon\Carbon::parse($asignacion->fecha_asignacion)->format('d/m/Y') }}
+                                Desde {{ $asignacion->fecha_asignacion->format('d/m/Y') }}
                                 @if($asignacion->fecha_fin)
-                                    hasta {{ \Carbon\Carbon::parse($asignacion->fecha_fin)->format('d/m/Y') }}
+                                    hasta {{ $asignacion->fecha_fin->format('d/m/Y') }}
                                 @else
                                     (actual)
                                 @endif
@@ -151,47 +135,80 @@
                 </ul>
             </div>
         </div>
+
     </div>
 
-    <!-- Código QR + Acciones -->
+    <!-- ========================= COL DERECHA ========================= -->
     <div class="col-lg-4">
+
+        {{-- ================= QR ================= --}}
         <div class="card shadow">
-            <div class="card-header text-white bg-orange">
+            <div class="card-header text-white bg-warning">
                 <h5 class="card-title mb-0"><i class="fas fa-qrcode me-2"></i>Código QR</h5>
             </div>
+
             <div class="card-body text-center">
-                <div class="bg-light p-4 rounded mb-3 border" style="max-height: 250px; overflow-y: auto;">
-                    <i class="fas fa-qrcode fa-6x text-dark"></i>
+
+                @php
+                    $qrUrl = route('inventario.equipo', $equipo->id);
+
+                    try {
+                        $qrCode = QrCode::format('png')
+                            ->size(250)
+                            ->margin(2)
+                            ->errorCorrection('H')
+                            ->generate($qrUrl); 
+                        
+                        $qrBase64 = 'data:image/png;base64,' . base64_encode($qrCode);
+                    } catch (\Exception $e) {
+                        $qrBase64 = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" . urlencode($qrUrl); 
+                    }
+
+                    $modeloSlug = \Illuminate\Support\Str::slug($equipo->modelo);
+                @endphp
+
+                <p class="text-muted small">Escanea para ver la información del equipo</p>
+
+                <img id="qrImageDetail"
+                    src="{{ $qrBase64 }}"
+                    alt="QR {{ $equipo->modelo }}"
+                    class="img-fluid mx-auto d-block mb-3"
+                    style="max-width: 250px;">
+
+                <div class="d-grid gap-2">
+                    <button onclick="imprimirQR()" class="btn btn-primary">
+                        <i class="fas fa-print"></i> Imprimir QR
+                    </button>
+                    <button onclick="descargarQR('QR_EQ{{ $equipo->id }}_{{ $modeloSlug }}.png')" class="btn btn-outline-primary">
+                        <i class="fas fa-download"></i> Descargar QR
+                    </button>
                 </div>
-                <p class="text-muted small mb-3">Escanea este código para ver la información del equipo</p>
-                <button class="btn btn-primary w-100 mb-2">
-                    <i class="fas fa-print me-2"></i>Imprimir QR
-                </button>
-                <button class="btn btn-outline-primary w-100">
-                    <i class="fas fa-download me-2"></i>Descargar QR
-                </button>
             </div>
         </div>
 
+        {{-- ================= ACCIONES ================= --}}
         <div class="card shadow mt-4">
-            <div class="card-header text-white bg-orange">
+            <div class="card-header text-white bg-warning">
                 <h5 class="card-title mb-0"><i class="fas fa-bolt me-2"></i>Acciones Rápidas</h5>
             </div>
+
             <div class="card-body">
                 <div class="d-grid gap-2">
                     <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalGestionEquipo">
                         <i class="fas fa-edit me-2"></i>Editar / Asignar
                     </button>
+
                     <button class="btn btn-outline-info">
                         <i class="fas fa-file-pdf me-2"></i>Generar Reporte
                     </button>
-                    <!-- ✅ Corrección: Dar de Baja usa equipo.update -->
-                    <form method="POST" action="{{ route('equipo.update', $equipo->id) }}"
-                        onsubmit="return confirm('¿Estás seguro de que deseas dar de baja este equipo?');">
+
+                    <form method="POST"
+                        action="{{ route('equipo.update', $equipo->id) }}"
+                        onsubmit="return confirm('¿Dar de baja este equipo?');">
                         @csrf
                         @method('PUT')
                         <input type="hidden" name="categoria" value="equipo">
-                        <input type="hidden" name="estado_equipo_id" value="4"> <!-- 4 = Baja -->
+                        <input type="hidden" name="estado_equipo_id" value="4">
                         <button type="submit" class="btn btn-outline-danger w-100">
                             <i class="fas fa-trash me-2"></i>Dar de Baja
                         </button>
@@ -199,10 +216,11 @@
                 </div>
             </div>
         </div>
+
     </div>
 </div>
-@endsection
 
+{{-- MODAL --}}
 @include('partials.modal-gestion-equipo', [
     'equipo' => $equipo,
     'estados' => $estados,
@@ -210,3 +228,45 @@
     'sucursales' => $sucursales,
     'proveedores' => $proveedores
 ])
+@endsection
+
+@push('scripts')
+<script>
+function imprimirQR() {
+    const qrImage = document.getElementById('qrImageDetail');
+    if (!qrImage) return;
+    
+    const ventana = window.open('', '', 'width=400,height=500');
+    ventana.document.write(`
+        <html>
+        <head>
+            <title>Imprimir QR - EQ{{ $equipo->id }}</title>
+            <style>
+                body { text-align: center; font-family: Arial; padding: 20px; }
+                img { max-width: 100%; margin: 20px 0; }
+            </style>
+        </head>
+        <body>
+            <h3>{{ $equipo->marca }} {{ $equipo->modelo }}</h3>
+            <p>N° Serie: {{ $equipo->numero_serie }}</p>
+            <img src="${qrImage.src}">
+            <p>ID: EQ{{ $equipo->id }}</p>
+            <script>window.onload = function(){ window.print(); setTimeout(()=>window.close(),500); }</script>
+        </body>
+        </html>
+    `);
+    ventana.document.close();
+}
+
+function descargarQR(filename) {
+    const qrImage = document.getElementById('qrImageDetail');
+    if (!qrImage) return;
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = qrImage.src;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+</script>
+@endpush
