@@ -21,6 +21,11 @@ class Asignacion extends Model
         'fecha_fin'
     ];
 
+    protected $casts = [
+        'fecha_asignacion' => 'datetime',
+        'fecha_fin' => 'datetime',
+    ];
+
     public function equipo()
     {
         return $this->belongsTo(Equipo::class, 'equipo_id');

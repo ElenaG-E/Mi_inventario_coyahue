@@ -15,14 +15,14 @@ class UsuarioController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('nombre', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('telefono', 'like', "%{$search}%")
-                  ->orWhereHas('rol', function($qr) use ($search) {
-                      $qr->where('nombre', 'like', "%{$search}%");
-                  })
-                  ->orWhere('estado', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('telefono', 'like', "%{$search}%")
+                    ->orWhereHas('rol', function ($qr) use ($search) {
+                        $qr->where('nombre', 'like', "%{$search}%");
+                    })
+                    ->orWhere('estado', 'like', "%{$search}%");
             });
         }
 
@@ -32,15 +32,38 @@ class UsuarioController extends Controller
         return view('gestion_usuarios', compact('usuarios', 'roles'));
     }
 
+    public function show(Usuario $usuario)
+    {
+        $usuario->load([
+            'rol',
+            'asignaciones' => function ($query) {
+                $query->with([
+                    'equipo.tipoEquipo',
+                    'equipo.estadoEquipo',
+                    'equipo.sucursal',
+                ])->orderByDesc('fecha_asignacion');
+            },
+        ]);
+
+        $historialAsignaciones = $usuario->asignaciones;
+        $equiposAsignados = $historialAsignaciones->filter->isActiva()->values();
+
+        return view('detalle_usuario', [
+            'usuario' => $usuario,
+            'equiposAsignados' => $equiposAsignados,
+            'historialAsignaciones' => $historialAsignaciones,
+        ]);
+    }
+
     public function store(Request $request)
     {
         // Todos los campos obligatorios al crear
         $request->validate([
-            'nombre'   => 'required|string|max:255',
-            'email'    => 'required|email|unique:usuarios,email',
+            'nombre' => 'required|string|max:255',
+            'email' => 'required|email|unique:usuarios,email',
             'telefono' => 'required|string|max:20',
-            'rol_id'   => 'required|integer|exists:roles,id',
-            'estado'   => 'required|string|in:activo,inactivo',
+            'rol_id' => 'required|integer|exists:roles,id',
+            'estado' => 'required|string|in:activo,inactivo',
             'password' => [
                 'required',
                 'string',
@@ -68,11 +91,11 @@ class UsuarioController extends Controller
     {
         // Contraseña opcional al editar
         $request->validate([
-            'nombre'   => 'required|string|max:255',
-            'email'    => 'required|email|unique:usuarios,email,' . $usuario->id,
+            'nombre' => 'required|string|max:255',
+            'email' => 'required|email|unique:usuarios,email,' . $usuario->id,
             'telefono' => 'required|string|max:20',
-            'rol_id'   => 'required|integer|exists:roles,id',
-            'estado'   => 'required|string|in:activo,inactivo',
+            'rol_id' => 'required|integer|exists:roles,id',
+            'estado' => 'required|string|in:activo,inactivo',
             'password' => [
                 'nullable',
                 'string',
@@ -115,7 +138,7 @@ class UsuarioController extends Controller
             ->where('nombre', 'like', "%{$term}%")
             ->orWhere('email', 'like', "%{$term}%")
             ->orWhere('telefono', 'like', "%{$term}%")
-            ->orWhereHas('rol', function($qr) use ($term) {
+            ->orWhereHas('rol', function ($qr) use ($term) {
                 $qr->where('nombre', 'like', "%{$term}%");
             })
             ->orWhere('estado', 'like', "%{$term}%")
@@ -140,3 +163,4 @@ class UsuarioController extends Controller
         return response()->json($sugerencias);
     }
 }
+

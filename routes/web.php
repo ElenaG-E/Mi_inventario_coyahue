@@ -39,11 +39,11 @@ Route::middleware(['auth'])->group(function () {
         if (!auth()->check()) {
             abort(403, 'No autorizado');
         }
-        
+
         $equipos = \App\Models\Equipo::all();
         $actualizados = 0;
         $errores = [];
-        
+
         foreach ($equipos as $equipo) {
             try {
                 $qrUrl = route('inventario.equipo', $equipo->id);
@@ -53,7 +53,7 @@ Route::middleware(['auth'])->group(function () {
                 $errores[] = "Equipo ID {$equipo->id}: {$e->getMessage()}";
             }
         }
-        
+
         return response()->json([
             'success' => true,
             'message' => "Se regeneraron {$actualizados} códigos QR correctamente",
@@ -75,7 +75,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Rutas de Reporte
     Route::get('/inventario/exportar', [InventarioController::class, 'exportar'])->name('inventario.exportar');
-    
+
     // Asignaciones múltiples
     Route::post('/inventario/asignaciones', [InventarioController::class, 'storeAsignaciones'])->name('inventario.asignaciones');
 
@@ -110,6 +110,7 @@ Route::middleware(['auth'])->group(function () {
     // Gestión de usuarios
     Route::get('/usuarios', [UsuarioController::class, 'index'])->name('gestion_usuarios');
     Route::post('/usuarios', [UsuarioController::class, 'store'])->name('usuarios.store');
+    Route::get('/usuarios/{usuario}', [UsuarioController::class, 'show'])->name('usuarios.show')->whereNumber('usuario');
     Route::put('/usuarios/{usuario}', [UsuarioController::class, 'update'])->name('usuarios.update');
     Route::delete('/usuarios/{usuario}', [UsuarioController::class, 'destroy'])->name('usuarios.destroy');
     Route::get('/usuarios/autocomplete', [UsuarioController::class, 'autocomplete'])->name('usuarios.autocomplete');
@@ -129,4 +130,4 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/gestion-sucursales/autocomplete', [SucursalController::class, 'autocomplete'])->name('sucursales.autocomplete');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
