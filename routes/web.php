@@ -1,14 +1,14 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\RegistroEquipoController;
-use App\Http\Controllers\LoginController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\InventarioController;
-use App\Http\Controllers\UsuarioController;
-use App\Http\Controllers\ProveedorController;
-use App\Http\Controllers\SucursalController;
+use App\Http\Controllers\RegistroEquipoController; // CORREGIDO
+use App\Http\Controllers\LoginController; // CORREGIDO
+use App\Http\Controllers\ProfileController; // CORREGIDO
+use App\Http\Controllers\DashboardController; // CORREGIDO
+use App\Http\Controllers\InventarioController; // CORREGIDO
+use App\Http\Controllers\UsuarioController; // CORREGIDO
+use App\Http\Controllers\ProveedorController; // CORREGIDO
+use App\Http\Controllers\SucursalController; // CORREGIDO
 
 // Página por defecto
 Route::get('/', function () {
@@ -83,6 +83,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Rutas de Reporte
     Route::get('/inventario/exportar', [InventarioController::class, 'exportar'])->name('inventario.exportar');
+
+    // RUTA AÑADIDA: Reporte Individual de Equipo (PDF)
+    Route::get('/reporte/equipo/{id}', [InventarioController::class, 'reporteIndividual'])->name('equipo.reporte');
 
     // Asignaciones múltiples
     Route::post('/inventario/asignaciones', [InventarioController::class, 'storeAsignaciones'])->name('inventario.asignaciones');

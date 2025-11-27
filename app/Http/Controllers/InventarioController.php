@@ -209,13 +209,16 @@ class InventarioController extends Controller
             case 'asignaciones':
             case 'estadisticas':
             case 'sucursales':
+                // Para reportes que necesitan ambos conjuntos de datos
                 $equipos = $equiposQuery->orderBy('fecha_registro', 'desc')->get();
                 $insumos = $insumosQuery->orderBy('fecha_registro', 'desc')->get();
                 break;
             case 'equipos':
+                // Solo equipos (insumos está vacío)
                 $equipos = $equiposQuery->orderBy('fecha_registro', 'desc')->get();
                 break;
             case 'insumos':
+                // Solo insumos (equipos está vacío)
                 $insumos = $insumosQuery->orderBy('fecha_registro', 'desc')->get();
                 break;
         }
@@ -453,6 +456,42 @@ class InventarioController extends Controller
             'qrBase64' // <-- PASAR EL QR ALMACENADO
         ));
     }
+    
+    /**
+     * Genera el reporte PDF individual para un equipo específico.
+     * Este método resuelve la BadMethodCallException.
+     * @param int $id ID del equipo.
+     * @return \Symfony\Component\HttpFoundation\Response
+     */
+    public function reporteIndividual($id)
+    {
+        // Usamos la misma lógica de carga de detalle que en detalleEquipo
+        $equipo = Equipo::with([
+            'tipoEquipo',
+            'proveedor',
+            'estadoEquipo',
+            'sucursal',
+            'especificacionesTecnicas',
+            'movimientos',
+            'asignaciones.usuario'
+        ])->findOrFail($id);
+
+        // Cargamos una vista dedicada al formato de reporte individual
+        // Asegúrate de que esta vista exista: resources/views/reportes/equipo_individual_pdf.blade.php
+        $vista = 'reportes.equipo_individual_pdf'; 
+        
+        try {
+            $pdf = Pdf::loadView($vista, compact('equipo'));
+            $filename = 'reporte_equipo_' . $equipo->id . '_' . now()->format('Ymd') . '.pdf';
+            return $pdf->download($filename);
+
+        } catch (\Exception $e) {
+            Log::error("Error generando reporte individual para EQ{$id}: " . $e->getMessage());
+            // Si hay un error, redirigimos al detalle con un mensaje
+            return redirect()->route('inventario.equipo', $id)->with('error', 'Error al generar el reporte individual. Verifique logs y vista Blade.');
+        }
+    }
+
 
     /**
      * Muestra el detalle del insumo (Se asume lógica similar para movimientos)

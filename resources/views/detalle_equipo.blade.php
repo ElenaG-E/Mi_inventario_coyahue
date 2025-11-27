@@ -1,10 +1,10 @@
-@extends('layouts.app') 
+@extends('layouts.app')
 
-@section('contenido') 
+@section('contenido')
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">Detalle del Equipo - EQ{{ $equipo->id }}</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
-        {{-- FIX DE RUTA: Se usa 'inventario.index' --}}
+        {{-- FIX: Se usa 'inventario.index' para la ruta principal --}}
         <a href="{{ route('inventario.index') }}" class="btn btn-sm btn-outline-success me-2">
             <i class="fas fa-arrow-left me-1"></i>Volver al Inventario
         </a>
@@ -192,17 +192,19 @@
                         <i class="fas fa-edit me-2"></i>Editar / Asignar
                     </button>
 
-                    <button class="btn btn-outline-info">
+                    {{-- Conectar el botón a la ruta de reporte individual --}}
+                    <a href="{{ route('equipo.reporte', $equipo->id) }}" target="_blank" class="btn btn-outline-info">
                         <i class="fas fa-file-pdf me-2"></i>Generar Reporte
-                    </button>
+                    </a>
 
+                    {{-- DAR DE BAJA --}}
                     <form method="POST"
                         action="{{ route('equipo.update', $equipo->id) }}"
-                        onsubmit="return confirm('¿Dar de baja este equipo?');">
+                        onsubmit="return confirm('¿Dar de baja este equipo? Esto cambiará su estado a "Baja".');">
                         @csrf
                         @method('PUT')
                         <input type="hidden" name="categoria" value="equipo">
-                        <input type="hidden" name="estado_equipo_id" value="4">
+                        <input type="hidden" name="estado_equipo_id" value="4"> 
                         <button type="submit" class="btn btn-outline-danger w-100">
                             <i class="fas fa-trash me-2"></i>Dar de Baja
                         </button>
@@ -226,7 +228,7 @@
 
 @push('scripts')
 <script>
-// Variables PHP escapadas de forma segura para JavaScript
+// Variables PHP escapadas de forma segura para JavaScript (FIX SyntaxError)
 const EQUIPO_TITULO = {{ json_encode($equipo->marca . ' ' . $equipo->modelo) }};
 const EQUIPO_SERIE = {{ json_encode($equipo->numero_serie) }};
 const EQUIPO_ID = {{ json_encode($equipo->id) }};
@@ -235,14 +237,15 @@ function imprimirQR() {
     const qrImage = document.getElementById('qrImageDetail');
     if (!qrImage) return;
     
+    // Abrir una nueva ventana temporal
     const ventana = window.open('', '', 'width=400,height=500');
     
-    // Se utiliza la concatenación de cadenas simples (más robusta que el template literal)
-    // Se utiliza slice(1, -1) para quitar las comillas dobles que json_encode() añade al valor.
+    // FIX: Se utiliza slice(1, -1) para quitar las comillas dobles que json_encode() añade.
+    // ESTE ES EL FORMATO FINAL JSON-SAFE + CONCATENACIÓN
     ventana.document.write(
         '<html>' +
         '<head>' +
-            '<title>Imprimir QR - EQ' + EQUIPO_ID + '</title>' +
+            '<title>Imprimir QR - EQ' + EQUIPO_ID.slice(1, -1) + '</title>' +
             '<style>' +
                 'body { text-align: center; font-family: Arial; padding: 20px; }' +
                 'img { max-width: 100%; margin: 20px 0; }' +
@@ -252,7 +255,7 @@ function imprimirQR() {
             '<h3>' + EQUIPO_TITULO.slice(1, -1) + '</h3>' +
             '<p>N° Serie: ' + EQUIPO_SERIE.slice(1, -1) + '</p>' +
             '<img src="' + qrImage.src + '">' +
-            '<p>ID: EQ' + EQUIPO_ID + '</p>' +
+            '<p>ID: EQ' + EQUIPO_ID.slice(1, -1) + '</p>' +
             '<script>window.onload = function(){ window.print(); setTimeout(()=>window.close(),500); }<\/script>' +
         '</body>' +
         '</html>'
