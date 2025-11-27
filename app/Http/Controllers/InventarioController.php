@@ -12,6 +12,7 @@ use App\Models\Usuario;
 use App\Models\Asignacion; 
 use App\Models\AsignacionInsumo; 
 
+// Componentes de Laravel
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -130,29 +131,42 @@ class InventarioController extends Controller
     
     private function obtenerDatosFiltrados(Request $request)
     {
-        $categoria     = $request->get('categoria', '');
-        $tipo          = $request->get('tipo', '');
-        $estado        = $request->get('estado', '');
-        $usuario       = $request->get('usuario', '');
-        $proveedor     = $request->get('proveedor', '');
-        $sucursal      = $request->get('sucursal', '');
-        $precioMin     = $request->get('precio_min', '');
-        $precioMax     = $request->get('precio_max', '');
-        $fechaTipo     = $request->get('fecha_tipo', 'registro');
-        $fechaDesde    = $request->get('fecha_desde', '');
-        $fechaHasta    = $request->get('fecha_hasta', '');
-        $buscar        = $request->get('buscar', '');
+        // Obtener todos los filtros que podrían venir de la tabla principal o del modal
+        $categoria      = $request->get('categoria', $request->get('filtro_categoria', ''));
+        $tipo           = $request->get('tipo', $request->get('filtro_tipo', ''));
+        $estado         = $request->get('estado', $request->get('filtro_estado', ''));
+        $usuario        = $request->get('usuario', $request->get('filtro_usuario', ''));
+        $proveedor      = $request->get('proveedor', $request->get('filtro_proveedor', ''));
+        $sucursal       = $request->get('sucursal', $request->get('filtro_sucursal', ''));
+        $precioMin      = $request->get('precio_min', $request->get('filtro_precio_min', ''));
+        $precioMax      = $request->get('precio_max', $request->get('filtro_precio_max', ''));
+        $fechaTipo      = $request->get('fecha_tipo', 'registro');
+        $fechaDesde     = $request->get('fecha_desde', '');
+        $fechaHasta     = $request->get('fecha_hasta', '');
+        $buscar         = $request->get('buscar', $request->get('filtro_buscar', ''));
 
+        // Filtro específico del modal de exportación
+        $tipoReporte    = $request->input('tipo_reporte', 'general'); 
+        
+        // Query base para Equipos
+        $equiposQuery = Equipo::with(['tipoEquipo','estadoEquipo','proveedor','usuarioAsignado.usuario','sucursal', 'asignaciones.usuario']);
+
+        // Query base para Insumos
+        $insumosQuery = Insumo::with(['estadoEquipo','proveedor','sucursal', 'asignaciones.usuario']);
+
+        // =====================================================================
+        // APLICAR FILTROS GLOBALES (de la tabla principal) a ambas queries
+        // =====================================================================
+        
         // Lógica de filtrado de EQUIPOS
-        $equiposQuery = Equipo::with(['tipoEquipo','estadoEquipo','proveedor','usuarioAsignado.usuario','sucursal'])
-            ->when($tipo, fn($q) => $q->whereHas('tipoEquipo', fn($t) => $t->where('nombre', $tipo)))
+        $equiposQuery->when($tipo, fn($q) => $q->whereHas('tipoEquipo', fn($t) => $t->where('nombre', $tipo)))
             ->when($estado, function($q) use ($estado) {
                 if ($estado === 'Baja') {
                     $q->whereHas('estadoEquipo', fn($e) => $e->where('nombre','Baja'));
                 } elseif ($estado) {
                     $q->whereHas('estadoEquipo', fn($e) => $e->where('nombre',$estado));
                 }
-            }, fn($q) => $q->whereHas('estadoEquipo', fn($e) => $e->where('nombre','!=','Baja')))
+            })
             ->when($usuario === 'Sin asignar', fn($q) => $q->whereDoesntHave('usuarioAsignado'))
             ->when($usuario && $usuario !== 'Sin asignar', fn($q) => $q->whereHas('usuarioAsignado.usuario', fn($u) => $u->where('nombre', $usuario)))
             ->when($proveedor, fn($q) => $q->whereHas('proveedor', fn($p) => $p->where('nombre', $proveedor)))
@@ -163,22 +177,17 @@ class InventarioController extends Controller
             ->when($fechaHasta, fn($q) => $q->whereDate($fechaTipo == 'compra' ? 'fecha_compra' : 'fecha_registro', '<=', $fechaHasta))
             ->when($buscar, fn($q) => $q->where(fn($sub) => $sub->where('marca', 'like', "%$buscar%")
                 ->orWhere('modelo', 'like', "%$buscar%")
-                ->orWhere('numero_serie', 'like', "%$buscar%")
-                ->orWhereHas('tipoEquipo', fn($t) => $t->where('nombre','like',"%$buscar%"))
-                ->orWhereHas('estadoEquipo', fn($e) => $e->where('nombre','like',"%$buscar%"))
-                ->orWhereHas('proveedor', fn($p) => $p->where('nombre','like',"%$buscar%"))
-                ->orWhereHas('usuarioAsignado.usuario', fn($u) => $u->where('nombre','like',"%$buscar%"))));
-        
+                ->orWhere('numero_serie', 'like', "%$buscar%")));
+
         // Lógica de filtrado de INSUMOS
-        $insumosQuery = Insumo::with(['estadoEquipo','proveedor','usuarioAsignado.usuario','sucursal'])
-            ->when($tipo, fn($q) => $q->where('nombre', $tipo))
+        $insumosQuery->when($tipo, fn($q) => $q->where('nombre', $tipo))
             ->when($estado, function($q) use ($estado) {
                 if ($estado === 'Baja') {
                     $q->whereHas('estadoEquipo', fn($e) => $e->where('nombre','Baja'));
                 } elseif ($estado) {
                     $q->whereHas('estadoEquipo', fn($e) => $e->where('nombre',$estado));
                 }
-            }, fn($q) => $q->whereHas('estadoEquipo', fn($e) => $e->where('nombre','!=','Baja')))
+            })
             ->when($usuario === 'Sin asignar', fn($q) => $q->whereDoesntHave('usuarioAsignado'))
             ->when($usuario && $usuario !== 'Sin asignar', fn($q) => $q->whereHas('usuarioAsignado.usuario', fn($u) => $u->where('nombre', $usuario)))
             ->when($proveedor, fn($q) => $q->whereHas('proveedor', fn($p) => $p->where('nombre', $proveedor)))
@@ -187,21 +196,37 @@ class InventarioController extends Controller
             ->when($precioMax, fn($q) => $q->where('precio', '<=', $precioMax))
             ->when($fechaDesde, fn($q) => $q->whereDate($fechaTipo == 'compra' ? 'fecha_compra' : 'fecha_registro', '>=', $fechaDesde))
             ->when($fechaHasta, fn($q) => $q->whereDate($fechaTipo == 'compra' ? 'fecha_compra' : 'fecha_registro', '<=', $fechaHasta))
-            ->when($buscar, fn($q) => $q->where(fn($sub) => $sub->where('nombre', 'like', "%$buscar%")
-                ->orWhereHas('estadoEquipo', fn($e) => $e->where('nombre','like',"%$buscar%"))
-                ->orWhereHas('usuarioAsignado.usuario', fn($u) => $u->where('nombre','like',"%$buscar%"))
-                ->orWhereHas('proveedor', fn($p) => $p->where('nombre','like',"%$buscar%"))
-                ->orWhereHas('sucursal', fn($s) => $s->where('nombre','like',"%$buscar%"))));
+            ->when($buscar, fn($q) => $q->where('nombre', 'like', "%$buscar%"));
+
+        // =====================================================================
+        // APLICAR LÓGICA ESPECÍFICA DEL TIPO DE REPORTE SOLICITADO
+        // =====================================================================
+        $equipos = collect();
+        $insumos = collect();
+
+        switch ($tipoReporte) {
+            case 'general':
+            case 'asignaciones':
+            case 'estadisticas':
+            case 'sucursales':
+                $equipos = $equiposQuery->orderBy('fecha_registro', 'desc')->get();
+                $insumos = $insumosQuery->orderBy('fecha_registro', 'desc')->get();
+                break;
+            case 'equipos':
+                $equipos = $equiposQuery->orderBy('fecha_registro', 'desc')->get();
+                break;
+            case 'insumos':
+                $insumos = $insumosQuery->orderBy('fecha_registro', 'desc')->get();
+                break;
+        }
 
         return [
-            'equipos' => ($categoria == 'Insumo' ? collect() : $equiposQuery->orderBy('fecha_registro','desc')->get()),
-            'insumos' => ($categoria == 'Equipo' ? collect() : $insumosQuery->orderBy('fecha_registro','desc')->get()),
+            'equipos' => $equipos,
+            'insumos' => $insumos,
             'fechaTipo' => $fechaTipo,
-            'categoriaFiltro' => $categoria,
-            'usuarioFiltro' => $usuario,
-            'proveedorFiltro' => $proveedor,
-            'sucursalFiltro' => $sucursal,
-            'estadoFiltro' => $estado,
+            'tipoReporte' => $tipoReporte,
+            'filtros' => $request->except(['_token', 'tipo_reporte', 'formato']),
+            'metadata' => ['titulo' => $this->generarTituloReporte($tipoReporte, $sucursal)],
         ];
     }
 
@@ -282,59 +307,47 @@ class InventarioController extends Controller
             return response()->json(['error' => 'Debe seleccionar el tipo y formato del reporte.'], 400);
         }
 
-        $datos = $this->obtenerDatosFiltrados($request);
+        // Crear una nueva instancia de Request que combine los filtros del index con los del modal.
+        $combinedRequestData = array_merge($request->query(), $request->all());
+        $combinedRequest = Request::create('/inventario/exportar', 'GET', $combinedRequestData); // Usar GET para imitar los filtros de URL
+
+        $datos = $this->obtenerDatosFiltrados($combinedRequest);
 
         $filename = "reporte_{$tipoReporte}_" . now()->format('Ymd_His');
 
         if ($formato === 'pdf') {
-            // ----------------------------------------------------
             // LÓGICA REAL DE GENERACIÓN DE PDF (Requiere Dompdf)
-            // ----------------------------------------------------
-            
-            // ASUMIR VISTA: Se debe crear 'reportes.inventario_pdf' con el HTML del reporte.
+            $vista = 'reportes.inventario_pdf'; // Vista por defecto para inventario general
+            if ($tipoReporte === 'asignaciones') {
+                $vista = 'reportes.asignaciones_pdf';
+            } elseif ($tipoReporte === 'estadisticas') {
+                $vista = 'reportes.estadisticas_pdf';
+            } elseif ($tipoReporte === 'equipos') {
+                $vista = 'reportes.equipos_pdf'; 
+            } elseif ($tipoReporte === 'insumos') {
+                $vista = 'reportes.insumos_pdf'; 
+            } elseif ($tipoReporte === 'sucursales') {
+                 $vista = 'reportes.sucursales_pdf'; 
+            }
+
             try {
-                $pdf = Pdf::loadView('reportes.inventario_pdf', $datos);
+                $pdf = Pdf::loadView($vista, $datos);
                 return $pdf->download($filename . '.pdf');
             } catch (\Exception $e) {
                 Log::error('Error generando PDF: ' . $e->getMessage());
-                // Devolver un error JSON al usuario en lugar de un archivo corrupto.
-                return response()->json(['error' => 'Error interno al generar el reporte PDF. Asegúrese de que la librería DomPDF esté instalada y la vista exista.'], 500);
+                return response()->json(['error' => 'Error interno al generar el reporte PDF. Asegúrese de que la librería DomPDF esté instalada y la vista Blade (`' . $vista . '`) exista. Mensaje: ' . $e->getMessage()], 500);
             }
 
         } elseif ($formato === 'excel') {
-            // ----------------------------------------------------
-            // LÓGICA DE EXCEL/CSV BÁSICA
-            // ----------------------------------------------------
+            // LÓGICA DE EXCEL/CSV
+            $rows = $this->generarFilasCSV($datos);
             
-            $headers = ['Tipo/Nombre', 'Marca', 'Modelo/Cantidad', 'N° Serie', 'Precio', 'Estado', 'Sucursal'];
-            $rows = collect();
-            
-            if ($datos['equipos']->isNotEmpty()) {
-                $rows = $datos['equipos']->map(fn($e) => [
-                    $e->tipoEquipo->nombre ?? '-',
-                    $e->marca,
-                    $e->modelo,
-                    $e->numero_serie,
-                    number_format($e->precio, 0, ',', '.'),
-                    $e->estadoEquipo->nombre ?? '-',
-                    $e->sucursal->nombre ?? '-',
-                ]);
-            } elseif ($datos['insumos']->isNotEmpty()) {
-                 $rows = $datos['insumos']->map(fn($i) => [
-                    $i->nombre,
-                    'N/A',
-                    $i->cantidad,
-                    'N/A',
-                    number_format($i->precio, 0, ',', '.'),
-                    $i->estadoEquipo->nombre ?? '-',
-                    $i->sucursal->nombre ?? '-',
-                ]);
+            // Si no hay filas de datos aparte del encabezado, devolver un mensaje
+            if ($rows->count() <= 1 && ($tipoReporte === 'equipos' || $tipoReporte === 'insumos')) {
+                 return response()->json(['error' => 'No hay datos para el tipo de reporte seleccionado y los filtros aplicados.'], 404);
             }
-            
-            $rows->prepend($headers);
 
-            // Generar un archivo CSV simple para simular Excel
-            $csv = $rows->map(fn($row) => implode(';', $row))->implode("\n"); // Usamos ';' como separador para mejor compatibilidad CSV
+            $csv = $rows->map(fn($row) => implode(';', $row))->implode("\n");
             
             $filename .= '.csv';
             
@@ -482,7 +495,7 @@ class InventarioController extends Controller
 
 
     // =========================================================================
-    // MÉTODOS PRIVADOS AUXILIARES (para asignaciones masivas)
+    // MÉTODOS PRIVADOS AUXILIARES (para asignaciones masivas y reportes)
     // =========================================================================
 
     private function procesarAsignacionEquipo(Equipo $equipo, $tipoAsignacion, $destinoId)
@@ -619,5 +632,139 @@ class InventarioController extends Controller
         ];
         
         return $mensajes[$tipoAsignacion] ?? "Operación completada para $cantidad elementos";
+    }
+
+    private function generarTituloReporte($tipo, $sucursal) {
+        $titulo = [
+            'general' => 'Inventario Completo',
+            'equipos' => 'Reporte de Equipos',
+            'insumos' => 'Reporte de Insumos',
+            'asignaciones' => 'Reporte de Asignaciones por Usuario',
+            'sucursales' => 'Inventario por Sucursal: ' . ($sucursal ?: 'Todas'),
+            'estadisticas' => 'Estadísticas Generales de Inventario',
+        ];
+        return ($titulo[$tipo] ?? 'Reporte Desconocido') . ' - ' . now()->format('d/m/Y H:i');
+    }
+
+    private function generarFilasCSV(array $datos)
+    {
+        $rows = collect();
+        $equipos = $datos['equipos'];
+        $insumos = $datos['insumos'];
+        $tipoReporte = $datos['tipoReporte'];
+
+        // Encabezados y datos según el tipo de reporte
+        switch ($tipoReporte) {
+            case 'general':
+            case 'equipos':
+            case 'insumos':
+            case 'sucursales':
+                // Encabezados para inventario general/equipos/insumos/sucursales
+                $commonHeaders = ['Categoría', 'Tipo/Nombre', 'Marca', 'Modelo', 'N° Serie / Cantidad', 'Precio', 'Estado', 'Usuario Asignado', 'Sucursal'];
+                
+                if ($rows->isEmpty()) { // Añadir encabezado solo si no hay datos previamente mergeados
+                    $rows->push($commonHeaders);
+                }
+
+                // Datos de Equipos
+                if ($equipos->isNotEmpty() && ($tipoReporte === 'general' || $tipoReporte === 'equipos' || $tipoReporte === 'sucursales')) {
+                    $rows = $rows->merge($equipos->map(fn($e) => [
+                        'Equipo',
+                        $e->tipoEquipo->nombre ?? '-',
+                        $e->marca,
+                        $e->modelo,
+                        $e->numero_serie,
+                        number_format($e->precio, 0, ',', '.'),
+                        $e->estadoEquipo->nombre ?? '-',
+                        $e->usuarioAsignado?->usuario->nombre ?? 'Sin asignar',
+                        $e->sucursal->nombre ?? '-',
+                    ]));
+                }
+
+                // Datos de Insumos
+                if ($insumos->isNotEmpty() && ($tipoReporte === 'general' || $tipoReporte === 'insumos' || $tipoReporte === 'sucursales')) {
+                    $rows = $rows->merge($insumos->map(fn($i) => [
+                        'Insumo',
+                        $i->nombre,
+                        'N/A', // Los insumos no tienen marca
+                        'N/A', // Los insumos no tienen modelo
+                        $i->cantidad, // Usamos 'Cantidad' en lugar de N° Serie
+                        number_format($i->precio, 0, ',', '.'),
+                        $i->estadoEquipo->nombre ?? '-',
+                        $i->usuarioAsignado?->usuario->nombre ?? 'Sin asignar',
+                        $i->sucursal->nombre ?? '-',
+                    ]));
+                }
+                break;
+
+            case 'asignaciones':
+                $rows->push(['Usuario', 'Item Asignado', 'Tipo de Item', 'Fecha Asignación', 'Fecha Fin', 'Motivo']);
+                
+                // Asignaciones de equipos
+                $rows = $rows->merge($equipos->flatMap(fn($e) => $e->asignaciones->map(fn($a) => [
+                    $a->usuario->nombre ?? 'N/A',
+                    ($e->marca ? $e->marca . ' ' : '') . $e->modelo . ' (S/N: ' . $e->numero_serie . ')',
+                    'Equipo',
+                    $a->fecha_asignacion ? $a->fecha_asignacion->format('Y-m-d H:i') : 'N/A',
+                    $a->fecha_fin ? $a->fecha_fin->format('Y-m-d H:i') : 'Activa',
+                    $a->motivo,
+                ])));
+
+                // Asignaciones de insumos (si tu modelo AsignacionInsumo tiene una relación similar)
+                $rows = $rows->merge($insumos->flatMap(fn($i) => $i->asignaciones->map(fn($ai) => [
+                    $ai->usuario->nombre ?? 'N/A',
+                    $i->nombre . ' (Cantidad: ' . $ai->cantidad . ')',
+                    'Insumo',
+                    $ai->fecha_asignacion ? $ai->fecha_asignacion->format('Y-m-d H:i') : 'N/A',
+                    $ai->fecha_fin ? $ai->fecha_fin->format('Y-m-d H:i') : 'Activa',
+                    $ai->motivo,
+                ])));
+                break;
+
+            case 'estadisticas':
+                // Esto es un placeholder. Para estadísticas reales, necesitarías procesar los datos
+                // (e.g., contar por estado, por tipo, por sucursal, etc.)
+                $rows = collect([
+                    ['Estadística', 'Valor'],
+                    ['Total Equipos', $equipos->count()],
+                    ['Equipos en Uso', $equipos->filter(fn($e) => $e->estadoEquipo->nombre === 'En Uso')->count()],
+                    ['Equipos en Reparación', $equipos->filter(fn($e) => $e->estadoEquipo->nombre === 'En Reparación')->count()],
+                    ['Equipos en Almacén', $equipos->filter(fn($e) => $e->estadoEquipo->nombre === 'En Almacén')->count()],
+                    ['Equipos dados de Baja', $equipos->filter(fn($e) => $e->estadoEquipo->nombre === 'Baja')->count()],
+                    ['Total Insumos', $insumos->count()],
+                    ['Insumos Disponibles', $insumos->filter(fn($i) => $i->estadoEquipo->nombre === 'En Almacén')->count()],
+                ]);
+                break;
+
+            default:
+                // Si no se reconoce el tipo de reporte, genera un reporte general
+                $rows->push(['Categoría', 'Tipo/Nombre', 'Marca', 'Modelo', 'N° Serie / Cantidad', 'Precio', 'Estado', 'Usuario Asignado', 'Sucursal']);
+                
+                $rows = $rows->merge($equipos->map(fn($e) => [
+                    'Equipo',
+                    $e->tipoEquipo->nombre ?? '-',
+                    $e->marca,
+                    $e->modelo,
+                    $e->numero_serie,
+                    number_format($e->precio, 0, ',', '.'),
+                    $e->estadoEquipo->nombre ?? '-',
+                    $e->usuarioAsignado?->usuario->nombre ?? 'Sin asignar',
+                    $e->sucursal->nombre ?? '-',
+                ]));
+                $rows = $rows->merge($insumos->map(fn($i) => [
+                    'Insumo',
+                    $i->nombre,
+                    'N/A',
+                    'N/A',
+                    $i->cantidad,
+                    number_format($i->precio, 0, ',', '.'),
+                    $i->estadoEquipo->nombre ?? '-',
+                    $i->usuarioAsignado?->usuario->nombre ?? 'Sin asignar',
+                    $i->sucursal->nombre ?? '-',
+                ]));
+                break;
+        }
+        
+        return $rows;
     }
 }
