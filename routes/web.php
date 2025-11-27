@@ -1,8 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\RegistroEquipoController; // CORREGIDO
-use App\Http\Controllers\LoginController; // CORREGIDO
+use App\Http\Controllers\RegistroEquipoController;
+use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ProfileController; // CORREGIDO
 use App\Http\Controllers\DashboardController; // CORREGIDO
 use App\Http\Controllers\InventarioController; // CORREGIDO

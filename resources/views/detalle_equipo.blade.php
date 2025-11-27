@@ -192,10 +192,27 @@
                         <i class="fas fa-edit me-2"></i>Editar / Asignar
                     </button>
 
-                    {{-- Conectar el botón a la ruta de reporte individual --}}
-                    <a href="{{ route('equipo.reporte', $equipo->id) }}" target="_blank" class="btn btn-outline-info">
-                        <i class="fas fa-file-pdf me-2"></i>Generar Reporte
-                    </a>
+                    {{-- INICIO DEL DROPDOWN DE EXPORTACIÓN --}}
+                    <div class="dropdown">
+                        <button class="btn btn-outline-info dropdown-toggle w-100" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-file-export me-2"></i>Generar Reporte
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                {{-- Opción 1: PDF --}}
+                                <a class="dropdown-item" href="{{ route('equipo.reporte', ['id' => $equipo->id, 'formato' => 'pdf']) }}" target="_blank">
+                                    <i class="fas fa-file-pdf me-2 text-danger"></i> PDF (Documento)
+                                </a>
+                            </li>
+                            <li>
+                                {{-- Opción 2: CSV (Excel) --}}
+                                <a class="dropdown-item" href="{{ route('equipo.reporte', ['id' => $equipo->id, 'formato' => 'csv']) }}" target="_blank">
+                                    <i class="fas fa-file-excel me-2 text-success"></i> CSV (Datos para Excel)
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    {{-- FIN DEL DROPDOWN DE EXPORTACIÓN --}}
 
                     {{-- DAR DE BAJA --}}
                     <form method="POST"
@@ -228,34 +245,31 @@
 
 @push('scripts')
 <script>
-// Variables PHP escapadas de forma segura para JavaScript (FIX SyntaxError)
-const EQUIPO_TITULO = {{ json_encode($equipo->marca . ' ' . $equipo->modelo) }};
-const EQUIPO_SERIE = {{ json_encode($equipo->numero_serie) }};
-const EQUIPO_ID = {{ json_encode($equipo->id) }};
+// Variables PHP escapadas de forma segura para JavaScript (FIX FINAL)
+const EQUIPO_TITULO = @json($equipo->marca . ' ' . $equipo->modelo);
+const EQUIPO_SERIE = @json($equipo->numero_serie);
+const EQUIPO_ID = {{ $equipo->id }}; // El ID se pasa como número
 
 function imprimirQR() {
     const qrImage = document.getElementById('qrImageDetail');
     if (!qrImage) return;
     
-    // Abrir una nueva ventana temporal
     const ventana = window.open('', '', 'width=400,height=500');
     
-    // FIX: Se utiliza slice(1, -1) para quitar las comillas dobles que json_encode() añade.
-    // ESTE ES EL FORMATO FINAL JSON-SAFE + CONCATENACIÓN
     ventana.document.write(
         '<html>' +
         '<head>' +
-            '<title>Imprimir QR - EQ' + EQUIPO_ID.slice(1, -1) + '</title>' +
+            '<title>Imprimir QR - EQ' + EQUIPO_ID + '</title>' +
             '<style>' +
                 'body { text-align: center; font-family: Arial; padding: 20px; }' +
                 'img { max-width: 100%; margin: 20px 0; }' +
             '</style>' +
         '</head>' +
         '<body>' +
-            '<h3>' + EQUIPO_TITULO.slice(1, -1) + '</h3>' +
-            '<p>N° Serie: ' + EQUIPO_SERIE.slice(1, -1) + '</p>' +
+            '<h3>' + EQUIPO_TITULO + '</h3>' +
+            '<p>N° Serie: ' + EQUIPO_SERIE + '</p>' +
             '<img src="' + qrImage.src + '">' +
-            '<p>ID: EQ' + EQUIPO_ID.slice(1, -1) + '</p>' +
+            '<p>ID: EQ' + EQUIPO_ID + '</p>' +
             '<script>window.onload = function(){ window.print(); setTimeout(()=>window.close(),500); }<\/script>' +
         '</body>' +
         '</html>'
