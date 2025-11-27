@@ -39,11 +39,11 @@ Route::middleware(['auth'])->group(function () {
         if (!auth()->check()) {
             abort(403, 'No autorizado');
         }
-        
+
         $equipos = \App\Models\Equipo::all();
         $actualizados = 0;
         $errores = [];
-        
+
         foreach ($equipos as $equipo) {
             try {
                 $qrUrl = route('inventario.equipo', $equipo->id);
@@ -53,7 +53,7 @@ Route::middleware(['auth'])->group(function () {
                 $errores[] = "Equipo ID {$equipo->id}: {$e->getMessage()}";
             }
         }
-        
+
         return response()->json([
             'success' => true,
             'message' => "Se regeneraron {$actualizados} códigos QR correctamente",
@@ -68,14 +68,22 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Inventario
-    Route::resource('inventario', InventarioController::class)->except(['show']);
-    Route::get('/inventario', [InventarioController::class, 'index'])->name('inventario');
+    // ===============================================
+    // SECCIÓN DE INVENTARIO (FIXED)
+    // ===============================================
+    
+    // 1. Define la ruta Index explícitamente con el nombre 'inventario.index'
+    Route::get('/inventario', [InventarioController::class, 'index'])->name('inventario.index');
+    
+    // 2. Define el recurso, excluyendo el index para evitar el conflicto de re-definición.
+    Route::resource('inventario', InventarioController::class)->except(['show', 'index']);
+    
+    // 3. El resto de rutas secundarias del inventario se mantienen sin cambios
     Route::get('/inventario/autocomplete', [InventarioController::class, 'autocomplete'])->name('inventario.autocomplete');
 
     // Rutas de Reporte
     Route::get('/inventario/exportar', [InventarioController::class, 'exportar'])->name('inventario.exportar');
-    
+
     // Asignaciones múltiples
     Route::post('/inventario/asignaciones', [InventarioController::class, 'storeAsignaciones'])->name('inventario.asignaciones');
 
@@ -110,6 +118,7 @@ Route::middleware(['auth'])->group(function () {
     // Gestión de usuarios
     Route::get('/usuarios', [UsuarioController::class, 'index'])->name('gestion_usuarios');
     Route::post('/usuarios', [UsuarioController::class, 'store'])->name('usuarios.store');
+    Route::get('/usuarios/{usuario}', [UsuarioController::class, 'show'])->name('usuarios.show')->whereNumber('usuario');
     Route::put('/usuarios/{usuario}', [UsuarioController::class, 'update'])->name('usuarios.update');
     Route::delete('/usuarios/{usuario}', [UsuarioController::class, 'destroy'])->name('usuarios.destroy');
     Route::get('/usuarios/autocomplete', [UsuarioController::class, 'autocomplete'])->name('usuarios.autocomplete');
@@ -129,4 +138,4 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/gestion-sucursales/autocomplete', [SucursalController::class, 'autocomplete'])->name('sucursales.autocomplete');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

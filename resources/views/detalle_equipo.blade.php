@@ -4,17 +4,16 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">Detalle del Equipo - EQ{{ $equipo->id }}</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="{{ route('inventario') }}" class="btn btn-sm btn-outline-success me-2">
+        {{-- FIX: Se usa 'inventario.index' para la ruta principal --}}
+        <a href="{{ route('inventario.index') }}" class="btn btn-sm btn-outline-success me-2">
             <i class="fas fa-arrow-left me-1"></i>Volver al Inventario
         </a>
     </div>
 </div>
 
 <div class="row">
-    <!-- ========================= COL IZQUIERDA ========================= -->
     <div class="col-lg-8">
 
-        <!-- ================= INFO GENERAL ================= -->
         <div class="card shadow mb-4">
             <div class="card-header text-white bg-warning">
                 <h5 class="card-title mb-0">
@@ -24,7 +23,6 @@
 
             <div class="card-body">
                 <div class="row">
-                    <!-- Columna 1 -->
                     <div class="col-md-6">
                         <p><strong>Tipo:</strong> {{ $equipo->tipoEquipo->nombre ?? 'N/A' }}</p>
                         <p><strong>Marca:</strong> {{ $equipo->marca }}</p>
@@ -34,7 +32,6 @@
                         <p><strong>Fecha de Compra:</strong> {{ \Carbon\Carbon::parse($equipo->fecha_compra)->format('d/m/Y') }}</p>
                     </div>
 
-                    <!-- Columna 2 -->
                     <div class="col-md-6">
                         <p><strong>Estado:</strong>
                             <span class="badge bg-{{ match($equipo->estadoEquipo->nombre) {
@@ -63,7 +60,6 @@
             </div>
         </div>
 
-        <!-- ================= ESPECIFICACIONES ================= -->
         @if($equipo->especificacionesTecnicas)
         <div class="card shadow mb-4">
             <div class="card-header text-white bg-dark">
@@ -104,7 +100,6 @@
         </div>
         @endif
 
-        <!-- ================= HISTORIAL ASIGNACIONES ================= -->
         <div class="card shadow mb-4">
             <div class="card-header text-white bg-secondary">
                 <h5 class="card-title mb-0">
@@ -138,7 +133,6 @@
 
     </div>
 
-    <!-- ========================= COL DERECHA ========================= -->
     <div class="col-lg-4">
 
         {{-- ================= QR ================= --}}
@@ -232,29 +226,37 @@
 
 @push('scripts')
 <script>
+// Variables PHP escapadas de forma segura para JavaScript
+const EQUIPO_TITULO = {{ json_encode($equipo->marca . ' ' . $equipo->modelo) }};
+const EQUIPO_SERIE = {{ json_encode($equipo->numero_serie) }};
+const EQUIPO_ID = {{ json_encode($equipo->id) }};
+
 function imprimirQR() {
     const qrImage = document.getElementById('qrImageDetail');
     if (!qrImage) return;
     
     const ventana = window.open('', '', 'width=400,height=500');
-    ventana.document.write(`
-        <html>
-        <head>
-            <title>Imprimir QR - EQ{{ $equipo->id }}</title>
-            <style>
-                body { text-align: center; font-family: Arial; padding: 20px; }
-                img { max-width: 100%; margin: 20px 0; }
-            </style>
-        </head>
-        <body>
-            <h3>{{ $equipo->marca }} {{ $equipo->modelo }}</h3>
-            <p>N° Serie: {{ $equipo->numero_serie }}</p>
-            <img src="${qrImage.src}">
-            <p>ID: EQ{{ $equipo->id }}</p>
-            <script>window.onload = function(){ window.print(); setTimeout(()=>window.close(),500); }</script>
-        </body>
-        </html>
-    `);
+    
+    // Se utiliza concatenación de cadenas simples para evitar el fallo de template literals
+    // causado por el procesamiento de Blade.
+    ventana.document.write(
+        '<html>' +
+        '<head>' +
+            '<title>Imprimir QR - EQ' + EQUIPO_ID + '</title>' +
+            '<style>' +
+                'body { text-align: center; font-family: Arial; padding: 20px; }' +
+                'img { max-width: 100%; margin: 20px 0; }' +
+            '</style>' +
+        '</head>' +
+        '<body>' +
+            '<h3>' + EQUIPO_TITULO.slice(1, -1) + '</h3>' + // Eliminamos las comillas extra de JSON
+            '<p>N° Serie: ' + EQUIPO_SERIE.slice(1, -1) + '</p>' +
+            '<img src="' + qrImage.src + '">' +
+            '<p>ID: EQ' + EQUIPO_ID + '</p>' +
+            '<script>window.onload = function(){ window.print(); setTimeout(()=>window.close(),500); }<\/script>' +
+        '</body>' +
+        '</html>'
+    );
     ventana.document.close();
 }
 
@@ -263,10 +265,26 @@ function descargarQR(filename) {
     if (!qrImage) return;
     const link = document.createElement('a');
     link.download = filename;
-    link.href = qrImage.src;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    
+    // Lógica para manejar la descarga de imágenes Base64 generadas por el controlador
+    if (qrImage.src.startsWith('data:image')) {
+        fetch(qrImage.src)
+            .then(res => res.blob())
+            .then(blob => {
+                const objectURL = URL.createObjectURL(blob);
+                link.href = objectURL;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(objectURL);
+            });
+    } else {
+        // Manejar URL externa (fallback)
+        link.href = qrImage.src;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 }
 </script>
 @endpush

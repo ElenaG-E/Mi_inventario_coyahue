@@ -50,7 +50,7 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('inventario') ? 'active' : '' }}" href="{{ route('inventario') }}">
+                            <a class="nav-link {{ request()->routeIs('inventario.index') ? 'active' : '' }}" href="{{ route('inventario.index') }}">
                                 <i class="fas fa-laptop me-2"></i>Inventario
                             </a>
                         </li>

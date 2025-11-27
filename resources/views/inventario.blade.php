@@ -16,7 +16,7 @@
         </div>
     </div>
 
-    <!-- Modal Scanner QR -->
+    {{-- Modal Scanner QR --}}
     <div class="modal fade" id="qrScannerModal" tabindex="-1" aria-labelledby="qrScannerModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -36,7 +36,7 @@
         </div>
     </div>
 
-    <!-- Modal Exportar -->
+    {{-- Modal Exportar --}}
     <div class="modal fade" id="modalReportes" tabindex="-1" aria-labelledby="modalReportesLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -103,7 +103,6 @@
                             </div>
                         </div>
 
-                        <!-- Opciones adicionales -->
                         <div class="mb-3">
                             <label class="form-label fw-bold">
                                 <i class="fas fa-cog me-1"></i>Opciones Adicionales
@@ -128,7 +127,6 @@
                             </div>
                         </div>
 
-                        <!-- Filtros actuales (hidden inputs) -->
                         <input type="hidden" name="filtro_categoria" value="{{ request('categoria') }}">
                         <input type="hidden" name="filtro_tipo" value="{{ request('tipo') }}">
                         <input type="hidden" name="filtro_estado" value="{{ request('estado') }}">
@@ -155,22 +153,21 @@
         </div>
     </div>
 
-    <!-- Barra de filtros -->
+    {{-- Barra de filtros --}}
     <div class="card shadow mb-4">
         <div class="card-header text-white bg-orange d-flex justify-content-between align-items-center">
             <h6 class="mb-0">
                 <i class="fas fa-filter me-2"></i>Filtros de Inventario
             </h6>
-            <a href="/inventario?categoria=" class="btn btn-sm btn-outline-light">
+            <a href="{{ route('inventario.index') }}" class="btn btn-sm btn-outline-light">
                 <i class="fas fa-times me-1"></i>Limpiar filtros
             </a>
         </div>
 
         <div id="filtrosInventario">
             <div class="card-body">
-                <form method="GET" action="/inventario" id="formFiltros">
+                <form method="GET" action="{{ route('inventario.index') }}" id="formFiltros">
                     <div class="row g-3 align-items-end">
-                        <!-- Buscar -->
                         <div class="col-md-2">
                             <label class="form-label">Buscar</label>
                             <input type="text" name="buscar" id="buscarInventario"
@@ -179,7 +176,6 @@
                                    value="{{ request('buscar') }}">
                         </div>
 
-                        <!-- Categoría -->
                         <div class="col-md-2">
                             <label class="form-label">Categoría</label>
                             <select name="categoria" class="form-select form-select-sm" onchange="this.form.submit()">
@@ -189,7 +185,6 @@
                             </select>
                         </div>
 
-                        <!-- Tipo -->
                         <div class="col-md-2">
                             <label class="form-label">Tipo</label>
                             <select name="tipo" class="form-select form-select-sm" onchange="this.form.submit()">
@@ -210,7 +205,6 @@
                             </select>
                         </div>
 
-                        <!-- Estado -->
                         <div class="col-md-2">
                             <label class="form-label">Estado</label>
                             <select name="estado" class="form-select form-select-sm" onchange="this.form.submit()">
@@ -223,7 +217,6 @@
                             </select>
                         </div>
 
-                        <!-- Usuario asignado -->
                         <div class="col-md-2">
                             <label class="form-label">Usuario asignado</label>
                             <select name="usuario" class="form-select form-select-sm" onchange="this.form.submit()">
@@ -237,7 +230,6 @@
                             </select>
                         </div>
 
-                        <!-- Proveedor -->
                         <div class="col-md-2">
                             <label class="form-label">Proveedor</label>
                             <select name="proveedor" class="form-select form-select-sm" onchange="this.form.submit()">
@@ -250,7 +242,6 @@
                             </select>
                         </div>
 
-                        <!-- Sucursal -->
                         <div class="col-md-2">
                             <label class="form-label">Sucursal</label>
                             <select name="sucursal" class="form-select form-select-sm" onchange="this.form.submit()">
@@ -263,21 +254,18 @@
                             </select>
                         </div>
 
-                        <!-- Precio mínimo -->
                         <div class="col-md-2">
                             <label class="form-label">Precio mínimo</label>
                             <input type="number" name="precio_min" class="form-control form-control-sm"
                                    value="{{ request('precio_min') }}" onchange="this.form.submit()">
                         </div>
 
-                        <!-- Precio máximo -->
                         <div class="col-md-2">
                             <label class="form-label">Precio máximo</label>
                             <input type="number" name="precio_max" class="form-control form-control-sm"
                                    value="{{ request('precio_max') }}" onchange="this.form.submit()">
                         </div>
 
-                        <!-- Filtrar por -->
                         <div class="col-md-2">
                             <label class="form-label">Filtrar por</label>
                             <select name="fecha_tipo" class="form-select form-select-sm" onchange="this.form.submit()">
@@ -286,14 +274,12 @@
                             </select>
                         </div>
 
-                        <!-- Desde -->
                         <div class="col-md-2">
                             <label class="form-label">Desde</label>
                             <input type="date" name="fecha_desde" class="form-control form-control-sm"
                                    value="{{ request('fecha_desde') }}" onchange="this.form.submit()">
                         </div>
 
-                        <!-- Hasta -->
                         <div class="col-md-2">
                             <label class="form-label">Hasta</label>
                             <input type="date" name="fecha_hasta" class="form-control form-control-sm"
@@ -305,7 +291,7 @@
         </div>
     </div>
 
-    <!-- Tabla de Inventario con asignaciones -->
+    {{-- Tabla de Inventario con asignaciones --}}
     <form method="POST" action="{{ route('inventario.asignaciones') }}">
         @csrf
         <div class="card shadow">
@@ -450,11 +436,9 @@
     </form>
 
     @push('scripts')
-        <!-- jQuery UI para autocomplete -->
         <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
         <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
         
-        <!-- Librería HTML5 QR Code -->
         <script src="https://unpkg.com/html5-qrcode"></script>
 
         <script>
@@ -677,7 +661,7 @@
             }
 
             function buscarPorQR(codigoQR) {
-                window.location.href = `/inventario?buscar=${encodeURIComponent(codigoQR)}`;
+                window.location.href = `{{ route('inventario.index') }}?buscar=${encodeURIComponent(codigoQR)}`;
             }
 
             // Detener escáner al cerrar el modal
