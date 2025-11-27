@@ -6,19 +6,19 @@ use App\Models\Equipo;
 use App\Models\Insumo;
 use App\Models\TipoEquipo;
 use App\Models\EstadoEquipo;
-use App\Models\Proveedor; // <-- CORRECCIÓN: De App->Models a App\Models
-use App\Models\Sucursal;
-use App\Models\Usuario;
-use App\Models\Asignacion; // <-- CORRECCIÓN: De App->Models a App\Models
-use App\Models\AsignacionInsumo; // <-- CORRECCIÓN: De App->Models a App\Models
+use App\Models\Proveedor; 
+use App\Models\Sucursal; 
+use App\Models\Usuario; 
+use App\Models\Asignacion; 
+use App\Models\AsignacionInsumo; 
 
-// Componentes de Laravel
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log; 
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Routing\Controller;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;  // ← AGREGAR ESTA LÍNEA
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Barryvdh\DomPDF\Facade\Pdf; // Implementación para PDF real (Dompdf)
 
 class InventarioController extends Controller
 {
@@ -54,9 +54,7 @@ class InventarioController extends Controller
                 } elseif ($estado) {
                     $q->whereHas('estadoEquipo', fn($e) => $e->where('nombre',$estado));
                 }
-            }, function($q) {
-                $q->whereHas('estadoEquipo', fn($e) => $e->where('nombre','!=','Baja'));
-            })
+            }, fn($q) => $q->whereHas('estadoEquipo', fn($e) => $e->where('nombre','!=','Baja')))
             ->when($usuario === 'Sin asignar', fn($q) => $q->whereDoesntHave('usuarioAsignado'))
             ->when($usuario && $usuario !== 'Sin asignar', fn($q) => $q->whereHas('usuarioAsignado.usuario', fn($u) => $u->where('nombre', $usuario)))
             ->when($proveedor, fn($q) => $q->whereHas('proveedor', fn($p) => $p->where('nombre', $proveedor)))
@@ -66,15 +64,13 @@ class InventarioController extends Controller
             ->when($fechaDesde, fn($q) => $q->whereDate($fechaTipo == 'compra' ? 'fecha_compra' : 'fecha_registro', '>=', $fechaDesde))
             ->when($fechaHasta, fn($q) => $q->whereDate($fechaTipo == 'compra' ? 'fecha_compra' : 'fecha_registro', '<=', $fechaHasta))
             ->when($buscar, function($q) use ($buscar) {
-                $q->where(function($sub) use ($buscar) {
-                    $sub->where('marca', 'like', "%$buscar%")
-                        ->orWhere('modelo', 'like', "%$buscar%")
-                        ->orWhere('numero_serie', 'like', "%$buscar%")
-                        ->orWhereHas('tipoEquipo', fn($t) => $t->where('nombre','like',"%$buscar%"))
-                        ->orWhereHas('estadoEquipo', fn($e) => $e->where('nombre','like',"%$buscar%"))
-                        ->orWhereHas('proveedor', fn($p) => $p->where('nombre','like',"%$buscar%"))
-                        ->orWhereHas('usuarioAsignado.usuario', fn($u) => $u->where('nombre','like',"%$buscar%"));
-                });
+                $q->where(fn($sub) => $sub->where('marca', 'like', "%$buscar%")
+                    ->orWhere('modelo', 'like', "%$buscar%")
+                    ->orWhere('numero_serie', 'like', "%$buscar%")
+                    ->orWhereHas('tipoEquipo', fn($t) => $t->where('nombre','like',"%$buscar%"))
+                    ->orWhereHas('estadoEquipo', fn($e) => $e->where('nombre','like',"%$buscar%"))
+                    ->orWhereHas('proveedor', fn($p) => $p->where('nombre','like',"%$buscar%"))
+                    ->orWhereHas('usuarioAsignado.usuario', fn($u) => $u->where('nombre','like',"%$buscar%")));
             })
             ->orderBy('fecha_registro','desc')
             ->get();
@@ -88,9 +84,7 @@ class InventarioController extends Controller
                 } elseif ($estado) {
                     $q->whereHas('estadoEquipo', fn($e) => $e->where('nombre',$estado));
                 }
-            }, function($q) {
-                $q->whereHas('estadoEquipo', fn($e) => $e->where('nombre','!=','Baja'));
-            })
+            }, fn($q) => $q->whereHas('estadoEquipo', fn($e) => $e->where('nombre','!=','Baja')))
             ->when($usuario === 'Sin asignar', fn($q) => $q->whereDoesntHave('usuarioAsignado'))
             ->when($usuario && $usuario !== 'Sin asignar', fn($q) => $q->whereHas('usuarioAsignado.usuario', fn($u) => $u->where('nombre', $usuario)))
             ->when($proveedor, fn($q) => $q->whereHas('proveedor', fn($p) => $p->where('nombre', $proveedor)))
@@ -100,13 +94,11 @@ class InventarioController extends Controller
             ->when($fechaDesde, fn($q) => $q->whereDate($fechaTipo == 'compra' ? 'fecha_compra' : 'fecha_registro', '>=', $fechaDesde))
             ->when($fechaHasta, fn($q) => $q->whereDate($fechaTipo == 'compra' ? 'fecha_compra' : 'fecha_registro', '<=', $fechaHasta))
             ->when($buscar, function($q) use ($buscar) {
-                $q->where(function($sub) use ($buscar) {
-                    $sub->where('nombre', 'like', "%$buscar%")
-                        ->orWhereHas('estadoEquipo', fn($e) => $e->where('nombre','like',"%$buscar%"))
-                        ->orWhereHas('usuarioAsignado.usuario', fn($u) => $u->where('nombre','like',"%$buscar%"))
-                        ->orWhereHas('proveedor', fn($p) => $p->where('nombre','like',"%$buscar%"))
-                        ->orWhereHas('sucursal', fn($s) => $s->where('nombre','like',"%$buscar%"));
-                });
+                $q->where(fn($sub) => $sub->where('nombre', 'like', "%$buscar%")
+                    ->orWhereHas('estadoEquipo', fn($e) => $e->where('nombre','like',"%$buscar%"))
+                    ->orWhereHas('usuarioAsignado.usuario', fn($u) => $u->where('nombre','like',"%$buscar%"))
+                    ->orWhereHas('proveedor', fn($p) => $p->where('nombre','like',"%$buscar%"))
+                    ->orWhereHas('sucursal', fn($s) => $s->where('nombre','like',"%$buscar%")));
             })
             ->orderBy('fecha_registro','desc')
             ->get();
@@ -130,6 +122,87 @@ class InventarioController extends Controller
             'sucursales',
             'categoria'
         ));
+    }
+
+    // =========================================================================
+    // MÉTODO AUXILIAR: Obtener datos filtrados para exportación
+    // =========================================================================
+    
+    private function obtenerDatosFiltrados(Request $request)
+    {
+        $categoria     = $request->get('categoria', '');
+        $tipo          = $request->get('tipo', '');
+        $estado        = $request->get('estado', '');
+        $usuario       = $request->get('usuario', '');
+        $proveedor     = $request->get('proveedor', '');
+        $sucursal      = $request->get('sucursal', '');
+        $precioMin     = $request->get('precio_min', '');
+        $precioMax     = $request->get('precio_max', '');
+        $fechaTipo     = $request->get('fecha_tipo', 'registro');
+        $fechaDesde    = $request->get('fecha_desde', '');
+        $fechaHasta    = $request->get('fecha_hasta', '');
+        $buscar        = $request->get('buscar', '');
+
+        // Lógica de filtrado de EQUIPOS
+        $equiposQuery = Equipo::with(['tipoEquipo','estadoEquipo','proveedor','usuarioAsignado.usuario','sucursal'])
+            ->when($tipo, fn($q) => $q->whereHas('tipoEquipo', fn($t) => $t->where('nombre', $tipo)))
+            ->when($estado, function($q) use ($estado) {
+                if ($estado === 'Baja') {
+                    $q->whereHas('estadoEquipo', fn($e) => $e->where('nombre','Baja'));
+                } elseif ($estado) {
+                    $q->whereHas('estadoEquipo', fn($e) => $e->where('nombre',$estado));
+                }
+            }, fn($q) => $q->whereHas('estadoEquipo', fn($e) => $e->where('nombre','!=','Baja')))
+            ->when($usuario === 'Sin asignar', fn($q) => $q->whereDoesntHave('usuarioAsignado'))
+            ->when($usuario && $usuario !== 'Sin asignar', fn($q) => $q->whereHas('usuarioAsignado.usuario', fn($u) => $u->where('nombre', $usuario)))
+            ->when($proveedor, fn($q) => $q->whereHas('proveedor', fn($p) => $p->where('nombre', $proveedor)))
+            ->when($sucursal, fn($q) => $q->whereHas('sucursal', fn($s) => $s->where('nombre', $sucursal)))
+            ->when($precioMin, fn($q) => $q->where('precio', '>=', $precioMin))
+            ->when($precioMax, fn($q) => $q->where('precio', '<=', $precioMax))
+            ->when($fechaDesde, fn($q) => $q->whereDate($fechaTipo == 'compra' ? 'fecha_compra' : 'fecha_registro', '>=', $fechaDesde))
+            ->when($fechaHasta, fn($q) => $q->whereDate($fechaTipo == 'compra' ? 'fecha_compra' : 'fecha_registro', '<=', $fechaHasta))
+            ->when($buscar, fn($q) => $q->where(fn($sub) => $sub->where('marca', 'like', "%$buscar%")
+                ->orWhere('modelo', 'like', "%$buscar%")
+                ->orWhere('numero_serie', 'like', "%$buscar%")
+                ->orWhereHas('tipoEquipo', fn($t) => $t->where('nombre','like',"%$buscar%"))
+                ->orWhereHas('estadoEquipo', fn($e) => $e->where('nombre','like',"%$buscar%"))
+                ->orWhereHas('proveedor', fn($p) => $p->where('nombre','like',"%$buscar%"))
+                ->orWhereHas('usuarioAsignado.usuario', fn($u) => $u->where('nombre','like',"%$buscar%"))));
+        
+        // Lógica de filtrado de INSUMOS
+        $insumosQuery = Insumo::with(['estadoEquipo','proveedor','usuarioAsignado.usuario','sucursal'])
+            ->when($tipo, fn($q) => $q->where('nombre', $tipo))
+            ->when($estado, function($q) use ($estado) {
+                if ($estado === 'Baja') {
+                    $q->whereHas('estadoEquipo', fn($e) => $e->where('nombre','Baja'));
+                } elseif ($estado) {
+                    $q->whereHas('estadoEquipo', fn($e) => $e->where('nombre',$estado));
+                }
+            }, fn($q) => $q->whereHas('estadoEquipo', fn($e) => $e->where('nombre','!=','Baja')))
+            ->when($usuario === 'Sin asignar', fn($q) => $q->whereDoesntHave('usuarioAsignado'))
+            ->when($usuario && $usuario !== 'Sin asignar', fn($q) => $q->whereHas('usuarioAsignado.usuario', fn($u) => $u->where('nombre', $usuario)))
+            ->when($proveedor, fn($q) => $q->whereHas('proveedor', fn($p) => $p->where('nombre', $proveedor)))
+            ->when($sucursal, fn($q) => $q->whereHas('sucursal', fn($s) => $s->where('nombre', $sucursal)))
+            ->when($precioMin, fn($q) => $q->where('precio', '>=', $precioMin))
+            ->when($precioMax, fn($q) => $q->where('precio', '<=', $precioMax))
+            ->when($fechaDesde, fn($q) => $q->whereDate($fechaTipo == 'compra' ? 'fecha_compra' : 'fecha_registro', '>=', $fechaDesde))
+            ->when($fechaHasta, fn($q) => $q->whereDate($fechaTipo == 'compra' ? 'fecha_compra' : 'fecha_registro', '<=', $fechaHasta))
+            ->when($buscar, fn($q) => $q->where(fn($sub) => $sub->where('nombre', 'like', "%$buscar%")
+                ->orWhereHas('estadoEquipo', fn($e) => $e->where('nombre','like',"%$buscar%"))
+                ->orWhereHas('usuarioAsignado.usuario', fn($u) => $u->where('nombre','like',"%$buscar%"))
+                ->orWhereHas('proveedor', fn($p) => $p->where('nombre','like',"%$buscar%"))
+                ->orWhereHas('sucursal', fn($s) => $s->where('nombre','like',"%$buscar%"))));
+
+        return [
+            'equipos' => ($categoria == 'Insumo' ? collect() : $equiposQuery->orderBy('fecha_registro','desc')->get()),
+            'insumos' => ($categoria == 'Equipo' ? collect() : $insumosQuery->orderBy('fecha_registro','desc')->get()),
+            'fechaTipo' => $fechaTipo,
+            'categoriaFiltro' => $categoria,
+            'usuarioFiltro' => $usuario,
+            'proveedorFiltro' => $proveedor,
+            'sucursalFiltro' => $sucursal,
+            'estadoFiltro' => $estado,
+        ];
     }
 
     /**
@@ -166,7 +239,7 @@ class InventarioController extends Controller
                         'label' => $item->nombre,
                         'value' => $item->nombre,
                         'tipo' => $type,
-                        'campo' => $type == 'tipo' || $type == 'estado' || $type == 'proveedor' || $type == 'sucursal' || $type == 'usuario' ? $type : 'buscar'
+                        'campo' => $type
                     ];
                 }
             }
@@ -199,48 +272,80 @@ class InventarioController extends Controller
 
     /**
      * Maneja la solicitud de exportación de reportes desde el modal.
-     * Genera una descarga simulada para verificar el flujo de la ruta.
-     * @param \Illuminate\Http\Request $request
-     * @return \Symfony\Component\HttpFoundation\Response|\Illuminate\Http\JsonResponse
      */
     public function exportar(Request $request)
     {
         $tipoReporte = $request->input('tipo_reporte');
-        $formato = $request->input('formato'); // 'pdf' o 'excel'
+        $formato = $request->input('formato');
         
         if (empty($tipoReporte) || empty($formato)) {
             return response()->json(['error' => 'Debe seleccionar el tipo y formato del reporte.'], 400);
         }
 
-        // Simulación del contenido del archivo
-        $content = "Reporte de Inventario Coyahue\n";
-        $content .= "Tipo: " . strtoupper($tipoReporte) . "\n";
-        $content .= "Formato solicitado: " . strtoupper($formato) . "\n";
-        $content .= "Filtros aplicados: " . json_encode($request->except(['_token', 'tipo_reporte', 'formato']));
-        
-        // ----------------------------------------------------
-        // LÓGICA DE SIMULACIÓN DE DESCARGA
-        // ----------------------------------------------------
-        $filename = "reporte_{$tipoReporte}_" . now()->format('Ymd_His') . ".txt";
-        
+        $datos = $this->obtenerDatosFiltrados($request);
+
+        $filename = "reporte_{$tipoReporte}_" . now()->format('Ymd_His');
+
         if ($formato === 'pdf') {
-            $filename = "reporte_{$tipoReporte}_" . now()->format('Ymd_His') . ".pdf";
-            $mimeType = 'application/pdf'; // Tipo MIME correcto para PDF
+            // ----------------------------------------------------
+            // LÓGICA REAL DE GENERACIÓN DE PDF (Requiere Dompdf)
+            // ----------------------------------------------------
+            
+            // ASUMIR VISTA: Se debe crear 'reportes.inventario_pdf' con el HTML del reporte.
+            try {
+                $pdf = Pdf::loadView('reportes.inventario_pdf', $datos);
+                return $pdf->download($filename . '.pdf');
+            } catch (\Exception $e) {
+                Log::error('Error generando PDF: ' . $e->getMessage());
+                // Devolver un error JSON al usuario en lugar de un archivo corrupto.
+                return response()->json(['error' => 'Error interno al generar el reporte PDF. Asegúrese de que la librería DomPDF esté instalada y la vista exista.'], 500);
+            }
+
         } elseif ($formato === 'excel') {
-            $filename = "reporte_{$tipoReporte}_" . now()->format('Ymd_His') . ".xlsx";
-            $mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'; // Tipo MIME para Excel
+            // ----------------------------------------------------
+            // LÓGICA DE EXCEL/CSV BÁSICA
+            // ----------------------------------------------------
+            
+            $headers = ['Tipo/Nombre', 'Marca', 'Modelo/Cantidad', 'N° Serie', 'Precio', 'Estado', 'Sucursal'];
+            $rows = collect();
+            
+            if ($datos['equipos']->isNotEmpty()) {
+                $rows = $datos['equipos']->map(fn($e) => [
+                    $e->tipoEquipo->nombre ?? '-',
+                    $e->marca,
+                    $e->modelo,
+                    $e->numero_serie,
+                    number_format($e->precio, 0, ',', '.'),
+                    $e->estadoEquipo->nombre ?? '-',
+                    $e->sucursal->nombre ?? '-',
+                ]);
+            } elseif ($datos['insumos']->isNotEmpty()) {
+                 $rows = $datos['insumos']->map(fn($i) => [
+                    $i->nombre,
+                    'N/A',
+                    $i->cantidad,
+                    'N/A',
+                    number_format($i->precio, 0, ',', '.'),
+                    $i->estadoEquipo->nombre ?? '-',
+                    $i->sucursal->nombre ?? '-',
+                ]);
+            }
+            
+            $rows->prepend($headers);
+
+            // Generar un archivo CSV simple para simular Excel
+            $csv = $rows->map(fn($row) => implode(';', $row))->implode("\n"); // Usamos ';' como separador para mejor compatibilidad CSV
+            
+            $filename .= '.csv';
+            
+            return Response::make($csv, 200, [
+                'Content-Type' => 'text/csv',
+                'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            ]);
+            
         } else {
-             // Fallback para tipos desconocidos
-            $mimeType = 'application/octet-stream';
+            return response()->json(['error' => 'Formato de exportación no soportado.'], 400);
         }
-
-        Log::info('Reporte solicitado', ['tipo' => $tipoReporte, 'formato' => $formato, 'usuario_id' => auth()->id()]);
-
-        // Simulación: Devuelve el contenido como un archivo para forzar la descarga.
-        return Response::make($content, 200, [
-            'Content-Type' => $mimeType,
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-        ]);
     }
 
     /**
@@ -278,12 +383,14 @@ class InventarioController extends Controller
             DB::commit(); // Confirma las operaciones
             
             $mensaje = $this->generarMensajeExito($tipoAsignacion, count($items));
-            return redirect()->route('inventario')->with('success', $mensaje);
+            // FIX: Corregido redirect a 'inventario.index'
+            return redirect()->route('inventario.index')->with('success', $mensaje);
 
         } catch (\Exception $e) {
             DB::rollBack(); // Deshace los cambios si algo falla
             Log::error('Error en asignaciones masivas: ' . $e->getMessage());
-            return redirect()->route('inventario')->with('error', 'Error al procesar las asignaciones.');
+            // FIX: Corregido redirect a 'inventario.index'
+            return redirect()->route('inventario.index')->with('error', 'Error al procesar las asignaciones.');
         }
     }
 
@@ -299,13 +406,8 @@ class InventarioController extends Controller
             'estadoEquipo',
             'sucursal',
             'especificacionesTecnicas', // Cargamos las especificaciones IA/técnicas
-            'movimientos' => function($query) {
-                // CORRECCIÓN: Usar 'fecha_movimiento'
-                $query->orderBy('fecha_movimiento', 'desc'); 
-            },
-            'asignaciones' => function($query) {
-                $query->with('usuario')->orderBy('fecha_asignacion', 'desc');
-            }
+            'movimientos' => fn($query) => $query->orderBy('fecha_movimiento', 'desc'),
+            'asignaciones' => fn($query) => $query->with('usuario')->orderBy('fecha_asignacion', 'desc')
         ])->findOrFail($id);
 
         // Obtener la última asignación activa
@@ -315,8 +417,8 @@ class InventarioController extends Controller
         // Obtener datos adicionales para el modal de gestión
         $estados = EstadoEquipo::all();
         $usuarios = Usuario::all();
-        $sucursales = Sucursal::all();
         $proveedores = Proveedor::all();
+        $sucursales = Sucursal::all();
 
         // Generar QR (Copia de la lógica de RegistroEquipoController)
         $qrUrl = route('inventario.equipo', $equipo->id);
@@ -333,8 +435,8 @@ class InventarioController extends Controller
             'equipo',
             'usuarios',
             'estados',
-            'sucursales',
             'proveedores',
+            'sucursales',
             'qrBase64' // <-- PASAR EL QR ALMACENADO
         ));
     }
@@ -348,19 +450,14 @@ class InventarioController extends Controller
             'estadoEquipo',
             'proveedor',
             'sucursal',
-            'movimientos' => function($query) {
-                 // CORRECCIÓN: Usar 'fecha_movimiento'
-                $query->orderBy('fecha_movimiento', 'desc');
-            },
-            'asignaciones' => function($query) {
-                $query->with('usuario')->orderBy('fecha_asignacion', 'desc');
-            }
+            'movimientos' => fn($query) => $query->orderBy('fecha_movimiento', 'desc'),
+            'asignaciones' => fn($query) => $query->with('usuario')->orderBy('fecha_asignacion', 'desc')
         ])->findOrFail($id);
         
         $usuarios = Usuario::all(); 
         $estados = EstadoEquipo::all(); 
-        $sucursales = Sucursal::all(); 
         $proveedores = Proveedor::all();
+        $sucursales = Sucursal::all(); 
 
         // Generar QR (Copia de la lógica de RegistroEquipoController)
         $qrUrl = route('inventario.insumo', $insumo->id);
@@ -377,8 +474,8 @@ class InventarioController extends Controller
             'insumo', 
             'usuarios', 
             'estados', 
-            'sucursales', 
             'proveedores',
+            'sucursales',
             'qrBase64'
         ));
     }

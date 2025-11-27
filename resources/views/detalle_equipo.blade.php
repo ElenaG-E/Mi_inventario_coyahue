@@ -4,7 +4,7 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">Detalle del Equipo - EQ{{ $equipo->id }}</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
-        {{-- FIX: Se usa 'inventario.index' para la ruta principal --}}
+        {{-- FIX DE RUTA: Se usa 'inventario.index' --}}
         <a href="{{ route('inventario.index') }}" class="btn btn-sm btn-outline-success me-2">
             <i class="fas fa-arrow-left me-1"></i>Volver al Inventario
         </a>
@@ -237,8 +237,8 @@ function imprimirQR() {
     
     const ventana = window.open('', '', 'width=400,height=500');
     
-    // Se utiliza concatenación de cadenas simples para evitar el fallo de template literals
-    // causado por el procesamiento de Blade.
+    // Se utiliza la concatenación de cadenas simples (más robusta que el template literal)
+    // Se utiliza slice(1, -1) para quitar las comillas dobles que json_encode() añade al valor.
     ventana.document.write(
         '<html>' +
         '<head>' +
@@ -249,7 +249,7 @@ function imprimirQR() {
             '</style>' +
         '</head>' +
         '<body>' +
-            '<h3>' + EQUIPO_TITULO.slice(1, -1) + '</h3>' + // Eliminamos las comillas extra de JSON
+            '<h3>' + EQUIPO_TITULO.slice(1, -1) + '</h3>' +
             '<p>N° Serie: ' + EQUIPO_SERIE.slice(1, -1) + '</p>' +
             '<img src="' + qrImage.src + '">' +
             '<p>ID: EQ' + EQUIPO_ID + '</p>' +
@@ -266,7 +266,7 @@ function descargarQR(filename) {
     const link = document.createElement('a');
     link.download = filename;
     
-    // Lógica para manejar la descarga de imágenes Base64 generadas por el controlador
+    // Lógica para manejar la descarga de imágenes Base64/URL
     if (qrImage.src.startsWith('data:image')) {
         fetch(qrImage.src)
             .then(res => res.blob())
