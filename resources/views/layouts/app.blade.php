@@ -1,6 +1,6 @@
 <?php
 ?>
-<!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -15,7 +15,7 @@
 
     {{-- ASSETS LOCALES (Compilados por VITE) --}}
     <link rel="icon" href="{{ asset('images/logo-coyahue.png') }}" type="image/png">
-    
+
     {{-- FIX CLAVE: Se carga explícitamente app.css y base.css para asegurar que el layout se aplique --}}
     @vite(['resources/css/app.css', 'resources/css/base.css', 'resources/js/app.js'])
 
@@ -23,46 +23,53 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body class="min-vh-100">
-    
-    @auth
+
+@auth
     <div class="container-fluid p-0">
         <div class="layout-wrapper d-flex min-vh-100">
-            
+
             <nav id="sidebar" class="sidebar">
                 <div class="position-sticky pt-4">
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
+                            <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"
+                               href="{{ route('dashboard') }}">
                                 <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('registro_equipo.create') ? 'active' : '' }}" href="{{ route('registro_equipo.create') }}">
+                            <a class="nav-link {{ request()->routeIs('registro_equipo.create') ? 'active' : '' }}"
+                               href="{{ route('registro_equipo.create') }}">
                                 <i class="fas fa-plus-circle me-2"></i>Registros
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('inventario.index') ? 'active' : '' }}" href="{{ route('inventario.index') }}">
+                            <a class="nav-link {{ request()->routeIs('inventario.index') ? 'active' : '' }}"
+                               href="{{ route('inventario.index') }}">
                                 <i class="fas fa-laptop me-2"></i>Inventario
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('gestion_proveedores') ? 'active' : '' }}" href="{{ route('gestion_proveedores') }}">
+                            <a class="nav-link {{ request()->routeIs('gestion_proveedores') ? 'active' : '' }}"
+                               href="{{ route('gestion_proveedores') }}">
                                 <i class="fas fa-truck me-2"></i>Proveedores
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('gestion_usuarios') ? 'active' : '' }}" href="{{ route('gestion_usuarios') }}">
+                            <a class="nav-link {{ request()->routeIs('gestion_usuarios') ? 'active' : '' }}"
+                               href="{{ route('gestion_usuarios') }}">
                                 <i class="fas fa-users me-2"></i>Usuarios
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('gestion_sucursales') ? 'active' : '' }}" href="{{ route('gestion_sucursales') }}">
+                            <a class="nav-link {{ request()->routeIs('gestion_sucursales') ? 'active' : '' }}"
+                               href="{{ route('gestion_sucursales') }}">
                                 <i class="fas fa-building me-2"></i>Sucursales
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">
+                            <a class="nav-link {{ request()->routeIs('ajustes') ? 'active' : '' }}"
+                               href="{{ route('ajustes') }}">
                                 <i class="fas fa-cog me-2"></i>Ajustes
                             </a>
                         </li>
@@ -71,13 +78,14 @@
             </nav>
 
             <main id="mainContent" class="main-content transition-all">
-                
+
                 <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
                     <div class="container-fluid">
                         <button id="sidebarToggle" class="btn btn-sm btn-outline-secondary me-2">
                             <i id="sidebarIcon" class="fas fa-angle-double-left"></i>
                         </button>
-                        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar" aria-label="Toggle navigation">
+                        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar"
+                                aria-label="Toggle navigation">
                             <i class="fas fa-bars"></i>
                         </button>
 
@@ -103,7 +111,8 @@
                                     {{ Auth::user()?->nombre ?? 'Usuario' }}
                                 </a>
                                 <div class="dropdown-menu dropdown-menu-end">
-                                    <a class="dropdown-item" href="{{ route('profile.edit') }}"><i class="fas fa-user me-2"></i>Perfil</a>
+                                    <a class="dropdown-item" href="{{ route('profile.edit') }}"><i
+                                            class="fas fa-user me-2"></i>Perfil</a>
                                     <form action="{{ route('logout') }}" method="POST" class="d-inline">
                                         @csrf
                                         <button type="submit" class="dropdown-item">
@@ -123,15 +132,15 @@
             </main>
         </div>
     </div>
-    @endauth
-    
-    @guest
-        @yield('content')
-    @endguest
+@endauth
+
+@guest
+    @yield('content')
+@endguest
 
 {{-- Popup QR global (Se mantiene fuera del bloque @auth) --}}
 <div id="popupQR" class="position-fixed top-0 start-0 w-100 h-100 d-none"
-      style="background: rgba(0,0,0,0.6); z-index: 1050;">
+     style="background: rgba(0,0,0,0.6); z-index: 1050;">
     <div class="d-flex justify-content-center align-items-center h-100">
         <div class="card shadow mb-4" style="width: 90%; max-width: 500px;">
             <div class="card-header bg-orange text-white d-flex justify-content-between align-items-center">
@@ -186,6 +195,16 @@
     document.getElementById('cerrarQR')?.addEventListener('click', () => {
         document.getElementById('popupQR')?.classList.add('d-none');
     });
+
+    // Cargar preferencia de modo oscuro al cargar cualquier página
+    (function loadThemeOnPageLoad() {
+        const savedTheme = localStorage.getItem('themeMode') || 'light';
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-mode');
+        } else {
+            document.body.classList.remove('dark-mode');
+        }
+    })();
 </script>
 
 @stack('scripts')

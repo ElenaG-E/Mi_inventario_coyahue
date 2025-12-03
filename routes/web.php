@@ -3,12 +3,25 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RegistroEquipoController;
 use App\Http\Controllers\LoginController;
-use App\Http\Controllers\ProfileController; // CORREGIDO
-use App\Http\Controllers\DashboardController; // CORREGIDO
-use App\Http\Controllers\InventarioController; // CORREGIDO
-use App\Http\Controllers\UsuarioController; // CORREGIDO
-use App\Http\Controllers\ProveedorController; // CORREGIDO
-use App\Http\Controllers\SucursalController; // CORREGIDO
+use App\Http\Controllers\ProfileController;
+
+// CORREGIDO
+use App\Http\Controllers\DashboardController;
+
+// CORREGIDO
+use App\Http\Controllers\InventarioController;
+
+// CORREGIDO
+use App\Http\Controllers\UsuarioController;
+
+// CORREGIDO
+use App\Http\Controllers\ProveedorController;
+
+// CORREGIDO
+use App\Http\Controllers\SucursalController;
+
+// CORREGIDO
+use App\Http\Controllers\AjustesController;
 
 // Página por defecto
 Route::get('/', function () {
@@ -71,13 +84,13 @@ Route::middleware(['auth'])->group(function () {
     // ===============================================
     // SECCIÓN DE INVENTARIO (FIXED)
     // ===============================================
-    
+
     // 1. Define la ruta Index explícitamente con el nombre 'inventario.index'
     Route::get('/inventario', [InventarioController::class, 'index'])->name('inventario.index');
-    
+
     // 2. Define el recurso, excluyendo el index para evitar el conflicto de re-definición.
     Route::resource('inventario', InventarioController::class)->except(['show', 'index']);
-    
+
     // 3. El resto de rutas secundarias del inventario se mantienen sin cambios
     Route::get('/inventario/autocomplete', [InventarioController::class, 'autocomplete'])->name('inventario.autocomplete');
 
@@ -139,6 +152,9 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/gestion-sucursales/{sucursal}', [SucursalController::class, 'update'])->name('sucursales.update');
     Route::delete('/gestion-sucursales/{sucursal}', [SucursalController::class, 'destroy'])->name('sucursales.destroy');
     Route::get('/gestion-sucursales/autocomplete', [SucursalController::class, 'autocomplete'])->name('sucursales.autocomplete');
+
+    // Ajustes del sistema
+    Route::get('/ajustes', [AjustesController::class, 'index'])->name('ajustes');
 });
 
 require __DIR__ . '/auth.php';

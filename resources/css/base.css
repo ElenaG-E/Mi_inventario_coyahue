@@ -1,4 +1,5 @@
 @import './base.css';
+@import './dark-mode.css';
 
 /* ==================================================================== */
 /* Carga de Tailwind CSS (para utilidades responsive) */
@@ -16,10 +17,27 @@
     --sidebar-width: 250px;
     --coyahue-orange: #ff6b35; /* Color corporativo */
     --coyahue-dark: #343a40;
+    --primary-alt: #4e73df; /* Color primario alternativo */
 }
 
 .bg-orange {
     background-color: var(--coyahue-orange) !important;
+}
+
+.bg-primary-alt {
+    background-color: var(--primary-alt) !important;
+}
+
+/* Asegurar que el texto sea blanco en bg-primary-alt */
+.bg-primary-alt,
+.bg-primary-alt .card-title,
+.bg-primary-alt h1,
+.bg-primary-alt h2,
+.bg-primary-alt h3,
+.bg-primary-alt h4,
+.bg-primary-alt h5,
+.bg-primary-alt h6 {
+    color: white !important;
 }
 
 /* 1. LAYOUT WRAPPER (Contenedor principal) */
@@ -27,7 +45,7 @@
     min-height: 100vh;
     width: 100%;
     /* Desactivar flex en el contenedor principal si no es necesario para evitar interferencia */
-    display: block; 
+    display: block;
 }
 
 /* 2. SIDEBAR (Barra Lateral) */
@@ -36,9 +54,9 @@
     background-color: var(--coyahue-dark);
     color: #fff;
     transition: all 0.3s ease;
-    
+
     /* Fijo y a la izquierda para "correr el menú hacia atrás" */
-    position: fixed; 
+    position: fixed;
     left: 0;
     top: 0;
     height: 100%;
@@ -74,7 +92,7 @@
 /* 3. MAIN CONTENT (Contenido Principal) */
 .main-content {
     /* Empujar el contenido a la derecha para dejar espacio al sidebar */
-    margin-left: var(--sidebar-width); 
+    margin-left: var(--sidebar-width);
     width: calc(100% - var(--sidebar-width)); /* Ajustar ancho total */
     transition: margin-left 0.3s ease, width 0.3s ease;
     flex-grow: 1;
@@ -93,9 +111,11 @@
         left: calc(0px - var(--sidebar-width));
         width: var(--sidebar-width);
     }
+
     .sidebar.collapsed {
         left: calc(0px - var(--sidebar-width)); /* Oculto por defecto */
     }
+
     .sidebar:not(.collapsed) {
         left: 0; /* Muestra el menú al hacer clic */
     }
@@ -104,6 +124,7 @@
         margin-left: 0; /* En móvil, el contenido no se desplaza */
         width: 100%;
     }
+
     .main-content.expanded {
         margin-left: 0;
         width: 100%;
