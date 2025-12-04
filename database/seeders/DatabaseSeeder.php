@@ -10,81 +10,46 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB; 
 
 // Importar todos los Seeders necesarios
+// Es importante que UserSeeder y DemoDataSeeder se llamen al final
+// porque dependen de Roles, Estados, Tipos, Proveedores y Sucursales.
 use Database\Seeders\RolesSeeder;
 use Database\Seeders\TiposEquipoSeeder;
 use Database\Seeders\EstadosEquipoSeeder;
 use Database\Seeders\ProveedoresSeeder;
 use Database\Seeders\SucursalesSeeder;
+use Database\Seeders\DemoDataSeeder; 
+use Database\Seeders\UsuarioSeeder;
 
 class DatabaseSeeder extends Seeder
 {
     /**
      * Run the database seeds.
      */
-    public function run()
+    public function run(): void
     {
         // ----------------------------------------------------
-        // DESACTIVAR RESTRICCIONES DE CLAVE FORÁNEA (1)
-        // Esto permite el TRUNCATE en tablas que ya tienen FKs apuntándoles.
+        // DESACTIVAR RESTRICCIONES DE CLAVE FORÁNEA
+        // Esto es necesario para ejecutar TRUNCATE en tablas con FKs
         // ----------------------------------------------------
         DB::statement('SET FOREIGN_KEY_CHECKS = 0');
 
         // -------------------------------------------
-        // 1. Datos estáticos con IDs fijos (Llaman a TRUNCATE internamente)
+        // 1. Llamada a todos los Seeders
         // -------------------------------------------
-        $this->call(RolesSeeder::class);
-        $this->call(TiposEquipoSeeder::class);    
-        $this->call(EstadosEquipoSeeder::class);  
-        $this->call(ProveedoresSeeder::class); // Datos de prueba para FK de Equipo/Insumo
-        $this->call(SucursalesSeeder::class);  // Datos de prueba para FK de Equipo/Insumo
-        
-        // -------------------------------------------
-        // 2. Generación de Usuarios base y de prueba (Dependen de Roles)
-        // -------------------------------------------
-        
-        // Truncar la tabla de Usuarios antes de insertar (opcional si migrate:fresh no limpia bien)
-        DB::table('usuarios')->truncate(); 
-        
-        // Admin de Prueba (rol_id 1)
-        Usuario::create([
-            'nombre' => 'Admin de Prueba',
-            'email' => 'admin@coyahue.com',
-            'password' => Hash::make('password'),
-            'telefono' => '123456789',
-            'rol_id' => 1,
-            'estado' => 'activo',
+        $this->call([
+            // Datos Estructurales (Base Data)
+            RolesSeeder::class,           // 1. Roles
+            EstadosEquipoSeeder::class,   // 2. Estados de Equipo
+            TiposEquipoSeeder::class,     // 3. Tipos de Equipo
+            SucursalesSeeder::class,      // 4. Sucursales
+            ProveedoresSeeder::class,     // 5. Proveedores
+            DemoDataSeeder::class,
+	    UsuarioSeeder::class,        // 7. Crea equipos, insumos y asignaciones
         ]);
 
-        // Usuario Administrador Adicional (rol_id 1)
-        Usuario::create([
-            'nombre' => 'Usuario Administrador',
-            'email' => 'admin.coyahue.cl', 
-            'password' => Hash::make('admin'),
-            'telefono' => '',
-            'rol_id' => 1,
-            'estado' => 'activo',
-        ]);
-        
-        // Generar 100 usuarios de prueba para asignación
-        Usuario::factory(100)->create();
-
         // -------------------------------------------
-        // REACTIVAR RESTRICCIONES DE CLAVE FORÁNEA (2)
-        // Después de este punto, todas las Factories deben usar IDs válidos.
+        // REACTIVAR RESTRICCIONES DE CLAVE FORÁNEA
         // -------------------------------------------
         DB::statement('SET FOREIGN_KEY_CHECKS = 1'); 
-
-        // -------------------------------------------
-        // 3. Generación de Equipos e Insumos (USAN FKs)
-        // -------------------------------------------
-        
-        // Generar 40 equipos aleatorios en estado "Disponible"
-        \App\Models\Equipo::factory(40)->create(); 
-
-        // Generar 20 equipos en estado "Asignado"
-        \App\Models\Equipo::factory(20)->asignado()->create(); 
-        
-        // Generar 50 insumos
-        \App\Models\Insumo::factory(50)->create(); 
     }
 }

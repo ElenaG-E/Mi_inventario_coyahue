@@ -10,7 +10,6 @@
     </div>
 </div>
 
-<!-- Tarjetas KPI -->
 <div class="row mb-4">
     @php
         $kpis = [
@@ -42,7 +41,6 @@
     @endforeach
 </div>
 
-<!-- Gráfico + Equipos recientes -->
 <div class="row">
     <div class="col-xl-8 col-lg-7">
         <div class="card shadow mb-4">
@@ -90,7 +88,6 @@
     </div>
 </div>
 
-<!-- Accesos Rápidos -->
 <div class="row mt-4">
     <div class="col-12">
         <div class="card shadow">
@@ -125,6 +122,9 @@
 
 @push('scripts')
 <script>
+    // ==========================================================
+    // LÓGICA DEL ESCÁNER QR
+    // ==========================================================
     let qrScanner;
 
     const popup = document.getElementById('popupQR');
@@ -170,6 +170,9 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
+        // ==========================================================
+        // LÓGICA DEL GRÁFICO (existente)
+        // ==========================================================
         const distribucion = @json($distribucion);
         const labels = distribucion.map(t => t.nombre);
         const data = distribucion.map(t => t.equipos_count);
@@ -200,6 +203,35 @@
                 ${label} <small class="text-muted">(${data[i]})</small>
             </div>
         `).join('');
+
+        // ==========================================================
+        // LÓGICA DEL BOTÓN DE REPORTE (CORREGIDA PARA CSV/PDF)
+        // ==========================================================
+        const btnGenerarReporte = document.getElementById('btnGenerarReporte');
+        const reporteTipoSelect = document.getElementById('reporteTipo');
+        const reporteFormatoSelect = document.getElementById('reporteFormato'); // Se espera que exista en el modal
+        
+        const modalReportes = new bootstrap.Modal(document.getElementById('modalReportes')); 
+
+        if (btnGenerarReporte && reporteTipoSelect && reporteFormatoSelect) {
+            btnGenerarReporte.addEventListener('click', function(e) {
+                e.preventDefault();
+                const tipo = reporteTipoSelect.value;
+                const formato = reporteFormatoSelect.value; // ¡AHORA SÍ CAPTURAMOS EL FORMATO!
+                const baseUrl = btnGenerarReporte.dataset.reporteUrl; 
+
+                if (tipo) {
+                    // CONSTRUIMOS LA URL CON AMBOS PARÁMETROS: tipo y formato
+                    const url = `${baseUrl}?tipo=${tipo}&formato=${formato}`;
+                    
+                    modalReportes.hide();
+
+                    window.open(url, '_blank'); 
+                } else {
+                    alert('Por favor, selecciona un tipo de reporte.');
+                }
+            });
+        }
     });
 </script>
 @endpush

@@ -145,7 +145,7 @@ class InventarioController extends Controller
         $fechaHasta     = $request->get('fecha_hasta', '');
         $buscar         = $request->get('buscar', $request->get('filtro_buscar', ''));
 
-        // Filtro específico del modal de exportación
+        // Filtro específico del modal de exportación (Usamos input() para tomar el valor del merge)
         $tipoReporte    = $request->input('tipo_reporte', 'general'); 
         
         // Query base para Equipos
@@ -209,6 +209,7 @@ class InventarioController extends Controller
             case 'asignaciones':
             case 'estadisticas':
             case 'sucursales':
+            case 'mantenciones': // Soporte para el nuevo tipo de reporte
                 // Para reportes que necesitan ambos conjuntos de datos
                 $equipos = $equiposQuery->orderBy('fecha_registro', 'desc')->get();
                 $insumos = $insumosQuery->orderBy('fecha_registro', 'desc')->get();
@@ -303,24 +304,32 @@ class InventarioController extends Controller
      */
     public function exportar(Request $request)
     {
-        $tipoReporte = $request->input('tipo_reporte');
-        $formato = $request->input('formato');
+        // 1. LEER PARÁMETROS: El JS del dashboard envía 'tipo' en la query string.
+        $tipoReporte = $request->query('tipo');
         
-        if (empty($tipoReporte) || empty($formato)) {
-            return response()->json(['error' => 'Debe seleccionar el tipo y formato del reporte.'], 400);
+        // 2. Establecer formato (asumimos 'pdf' por defecto, ya que el dashboard no lo envía)
+        $formato = $request->query('formato', 'pdf'); 
+
+        // Validar el tipo de reporte recibido del dashboard
+        if (empty($tipoReporte)) {
+             // Si no viene 'tipo', redirigimos.
+             return redirect()->route('dashboard')->with('error', 'Tipo de reporte no válido o no seleccionado.');
         }
 
-        // Crear una nueva instancia de Request que combine los filtros del index con los del modal.
-        $combinedRequestData = array_merge($request->query(), $request->all());
-        $combinedRequest = Request::create('/inventario/exportar', 'GET', $combinedRequestData); // Usar GET para imitar los filtros de URL
+        // 3. AJUSTE DE DATOS: Inyectamos los valores para que el método auxiliar funcione.
+        $request->merge([
+            'tipo_reporte' => $tipoReporte,
+            'formato' => $formato,
+        ]);
 
-        $datos = $this->obtenerDatosFiltrados($combinedRequest);
+        $datos = $this->obtenerDatosFiltrados($request);
 
         $filename = "reporte_{$tipoReporte}_" . now()->format('Ymd_His');
 
         if ($formato === 'pdf') {
             // LÓGICA REAL DE GENERACIÓN DE PDF (Requiere Dompdf)
             $vista = 'reportes.inventario_pdf'; // Vista por defecto para inventario general
+            
             if ($tipoReporte === 'asignaciones') {
                 $vista = 'reportes.asignaciones_pdf';
             } elseif ($tipoReporte === 'estadisticas') {
@@ -331,6 +340,14 @@ class InventarioController extends Controller
                 $vista = 'reportes.insumos_pdf'; 
             } elseif ($tipoReporte === 'sucursales') {
                  $vista = 'reportes.sucursales_pdf'; 
+            } elseif ($tipoReporte === 'general') {
+                $vista = 'reportes.inventario_pdf';
+            } elseif ($tipoReporte === 'mantenciones') {
+                // Vista para reportes de mantenciones
+                 $vista = 'reportes.mantenciones_pdf';
+            } else {
+                 // Tipo desconocido
+                 return redirect()->route('dashboard')->with('error', 'Tipo de reporte PDF desconocido: ' . $tipoReporte);
             }
 
             try {
@@ -338,18 +355,20 @@ class InventarioController extends Controller
                 return $pdf->download($filename . '.pdf');
             } catch (\Exception $e) {
                 Log::error('Error generando PDF: ' . $e->getMessage());
-                return response()->json(['error' => 'Error interno al generar el reporte PDF. Asegúrese de que la librería DomPDF esté instalada y la vista Blade (`' . $vista . '`) exista. Mensaje: ' . $e->getMessage()], 500);
+                // Se cambia a redirección para solicitudes que vienen del dashboard.
+                return redirect()->route('dashboard')->with('error', 'Error al generar el reporte PDF. Verifique la vista Blade (' . $vista . ').');
             }
 
-        } elseif ($formato === 'excel') {
-            // LÓGICA DE EXCEL/CSV
+        } elseif ($formato === 'excel' || $formato === 'csv') {
+            // LÓGICA DE EXCEL/CSV (se asume CSV por la implementación de generarFilasCSV)
             $rows = $this->generarFilasCSV($datos);
             
             // Si no hay filas de datos aparte del encabezado, devolver un mensaje
             if ($rows->count() <= 1 && ($tipoReporte === 'equipos' || $tipoReporte === 'insumos')) {
-                 return response()->json(['error' => 'No hay datos para el tipo de reporte seleccionado y los filtros aplicados.'], 404);
+                 return redirect()->route('dashboard')->with('error', 'No hay datos para el tipo de reporte seleccionado y los filtros aplicados.');
             }
 
+            // Generar CSV
             $csv = $rows->map(fn($row) => implode(';', $row))->implode("\n");
             
             $filename .= '.csv';
@@ -360,7 +379,7 @@ class InventarioController extends Controller
             ]);
             
         } else {
-            return response()->json(['error' => 'Formato de exportación no soportado.'], 400);
+            return redirect()->route('dashboard')->with('error', 'Formato de exportación no soportado.');
         }
     }
 
@@ -681,6 +700,7 @@ class InventarioController extends Controller
             'asignaciones' => 'Reporte de Asignaciones por Usuario',
             'sucursales' => 'Inventario por Sucursal: ' . ($sucursal ?: 'Todas'),
             'estadisticas' => 'Estadísticas Generales de Inventario',
+            'mantenciones' => 'Reporte de Equipos en Mantención', 
         ];
         return ($titulo[$tipo] ?? 'Reporte Desconocido') . ' - ' . now()->format('d/m/Y H:i');
     }
@@ -698,6 +718,7 @@ class InventarioController extends Controller
             case 'equipos':
             case 'insumos':
             case 'sucursales':
+            case 'mantenciones': 
                 // Encabezados para inventario general/equipos/insumos/sucursales
                 $commonHeaders = ['Categoría', 'Tipo/Nombre', 'Marca', 'Modelo', 'N° Serie / Cantidad', 'Precio', 'Estado', 'Usuario Asignado', 'Sucursal'];
                 
@@ -706,7 +727,7 @@ class InventarioController extends Controller
                 }
 
                 // Datos de Equipos
-                if ($equipos->isNotEmpty() && ($tipoReporte === 'general' || $tipoReporte === 'equipos' || $tipoReporte === 'sucursales')) {
+                if ($equipos->isNotEmpty() && ($tipoReporte === 'general' || $tipoReporte === 'equipos' || $tipoReporte === 'sucursales' || $tipoReporte === 'mantenciones')) {
                     $rows = $rows->merge($equipos->map(fn($e) => [
                         'Equipo',
                         $e->tipoEquipo->nombre ?? '-',
