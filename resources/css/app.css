@@ -1,4 +1,5 @@
 @import './base.css';
+@import './dark-mode.css';
 
 /* ==================================================================== */
 /* Carga de Tailwind CSS (para utilidades responsive) */
@@ -38,7 +39,7 @@
     background-color: var(--coyahue-dark); /* Se mantiene oscuro para contraste */
     color: #fff;
     transition: all 0.3s ease;
-    
+
     position: fixed; /* Fija la posición en el viewport */
     left: 0;
     top: 0; /* Asegura que comienza arriba del todo */
@@ -49,18 +50,18 @@
 
 /* Estado Colapsado */
 .sidebar.collapsed {
-    left: calc(0px - var(--sidebar-width)) !important; 
+    left: calc(0px - var(--sidebar-width)) !important;
     width: 0 !important; /* Desaparece el ancho */
 }
 
 /* 3. MAIN CONTENT (Contenido Principal) - SOLUCIÓN CLAVE */
 .main-content {
     /* Desplaza el contenido principal fuera del área del sidebar */
-    margin-left: var(--sidebar-width) !important; 
-    
+    margin-left: var(--sidebar-width) !important;
+
     /* Restringe el ancho al espacio restante del viewport */
-    width: calc(100% - var(--sidebar-width)) !important; 
-    
+    width: calc(100% - var(--sidebar-width)) !important;
+
     min-height: 100vh;
     transition: margin-left 0.3s ease, width 0.3s ease;
 }
@@ -68,19 +69,19 @@
 /* Estado del Contenido cuando el Sidebar está colapsado */
 .main-content.expanded {
     margin-left: 0 !important;
-    width: 100% !important; 
+    width: 100% !important;
 }
 
 
 /* Ajuste para el logo en el header */
 .logo-header {
-    height: 30px; 
+    height: 30px;
 }
 
 /* Reglas de Bootstrap para el padding del contenido yield */
 .container-fluid.py-4 {
     /* Asegura que el padding interno no se superponga */
-    padding-left: 1.5rem !important; 
+    padding-left: 1.5rem !important;
     padding-right: 1.5rem !important;
 }
 
@@ -89,8 +90,9 @@
     .sidebar {
         left: calc(0px - var(--sidebar-width)) !important;
     }
+
     .main-content {
-        margin-left: 0 !important; 
+        margin-left: 0 !important;
         width: 100% !important;
     }
 }
