@@ -1,10 +1,30 @@
-.table th, .table td {
-    vertical-align: middle;
+/*
+ * Gestión Usuarios CSS Styles
+ */
+
+.table-responsive {
+    margin-top: 20px;
 }
-.badge {
-    font-size: 0.85rem;
-    padding: 0.4em 0.6em;
+
+/* Cabecera de la tabla */
+.table th {
+    background-color: #f2f2f2;
+    color: #343a40;
+    font-weight: 600;
 }
-.btn-sm i {
-    margin-right: 4px;
+
+/* Estilo para el rol de administrador */
+.rol-admin {
+    font-weight: 700;
+    color: #dc8428; /* Naranja Coyahue */
 }
+
+/* Estilo para filas de la tabla */
+.table-hover tbody tr:hover {
+    background-color: #f5f5f5;
+}
+
+/* Botón de acción rápida */
+#btn-agregar-usuario {
+    margin-top: 20px;
+}}

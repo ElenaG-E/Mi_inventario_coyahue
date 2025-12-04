@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Models\Documento; // Asegurar que Documento esté importado
-use App\Models\Asignacion; // Asegurar que Asignacion esté importado
-use App\Models\Movimiento; // Asegurar que Movimiento esté importado
-use App\Models\EspecificacionTecnica; // Asegurar que EspecificacionTecnica esté importado
+use App\Models\Documento;
+use App\Models\Asignacion;
+use App\Models\Movimiento;
+use App\Models\EspecificacionTecnica;
+use App\Models\Sucursal;
 // Aseguramos que Ticket y LogEquipo existan si los usas en el namespace global
 // use App\Models\Ticket; 
 // use App\Models\LogEquipo; 
@@ -130,12 +131,9 @@ class Equipo extends Model
      * ============================ */
     public function documentos()
     {
-        return $this->belongsToMany(
-            Documento::class,
-            'documento_equipo',
-            'equipo_id',
-            'documento_id'
-        );
+        // ✅ CORRECCIÓN: Usar morphMany ya que el controlador guarda documentos 
+        // con documentable_id y documentable_type.
+        return $this->morphMany(Documento::class, 'documentable');
     }
 
     // Nota: Asume que el modelo Ticket existe.

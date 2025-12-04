@@ -1,4 +1,4 @@
-@extends('layouts.app')
+k@extends('layouts.app')
 
 @section('contenido')
 <div class="container-fluid">
@@ -63,6 +63,7 @@
                             <div class="row align-items-end">
                                 <div class="col-md-8 mb-3">
                                     <label for="numero_serie" class="form-label">Número de serie</label>
+                                    {{-- ✅ Autocomplete OFF --}}
                                     <input type="text" name="numero_serie" id="numero_serie" class="form-control" value="{{ old('numero_serie') }}" autocomplete="off">
                                     @error('numero_serie') <div class="text-danger">{{ $message }}</div> @enderror
                                 </div>
@@ -82,12 +83,14 @@
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="marca" class="form-label">Marca</label>
+                                    {{-- ✅ Autocomplete OFF --}}
                                     <input type="text" name="marca" id="marca" class="form-control" value="{{ old('marca') }}" autocomplete="off">
                                     @error('marca') <div class="text-danger">{{ $message }}</div> @enderror
                                 </div>
 
                                 <div class="col-md-6 mb-3">
                                     <label for="modelo" class="form-label">Modelo</label>
+                                    {{-- ✅ Autocomplete OFF --}}
                                     <input type="text" name="modelo" id="modelo" class="form-control" value="{{ old('modelo') }}" autocomplete="off">
                                     @error('modelo') <div class="text-danger">{{ $message }}</div> @enderror
                                 </div>
@@ -96,6 +99,7 @@
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="precio_equipo" class="form-label">Precio</label>
+                                    {{-- ✅ Autocomplete OFF --}}
                                     <input type="number" step="0.01" name="precio" id="precio_equipo" class="form-control" value="{{ old('precio') }}" autocomplete="off">
                                     @error('precio') <div class="text-danger">{{ $message }}</div> @enderror
                                 </div>
@@ -125,28 +129,34 @@
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Procesador</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="text" name="procesador" class="form-control" value="{{ old('procesador') }}" autocomplete="off">
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">RAM (GB)</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="number" name="ram_gb" class="form-control" min="0" value="{{ old('ram_gb') }}" autocomplete="off">
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Almacenamiento (GB)</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="number" name="almacenamiento_gb" class="form-control" min="0" value="{{ old('almacenamiento_gb') }}" autocomplete="off">
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Tipo de almacenamiento</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="text" name="tipo_almacenamiento" class="form-control" value="{{ old('tipo_almacenamiento') }}" autocomplete="off">
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Tarjeta gráfica</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="text" name="tarjeta_grafica" class="form-control" value="{{ old('tarjeta_grafica') }}" autocomplete="off">
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Sistema operativo</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="text" name="sistema_operativo" class="form-control" value="{{ old('sistema_operativo') }}" autocomplete="off">
                                     </div>
                                 </div>
@@ -158,28 +168,34 @@
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Pantalla (pulgadas)</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="text" name="pantalla_pulgadas" class="form-control" value="{{ old('pantalla_pulgadas') }}" autocomplete="off">
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Resolución pantalla</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="text" name="resolucion_pantalla" class="form-control" value="{{ old('resolucion_pantalla') }}" autocomplete="off">
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Tipo de panel</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="text" name="tipo_panel" class="form-control" value="{{ old('tipo_panel') }}" autocomplete="off">
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Frecuencia (Hz)</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="number" name="frecuencia_hz" class="form-control" min="0" value="{{ old('frecuencia_hz') }}" autocomplete="off">
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Batería (mAh)</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="number" name="bateria_mah" class="form-control" min="0" value="{{ old('bateria_mah') }}" autocomplete="off">
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Cámara frontal (MP)</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="number" name="camara_frontal_mp" class="form-control" min="0" value="{{ old('camara_frontal_mp') }}" autocomplete="off">
                                     </div>
                                 </div>
@@ -191,20 +207,24 @@
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Puertos monitor</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="text" name="puertos_monitor" class="form-control" value="{{ old('puertos_monitor') }}" autocomplete="off">
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Resolución pantalla</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="text" name="resolucion_pantalla_monitor" class="form-control" value="{{ old('resolucion_pantalla_monitor') }}" autocomplete="off">
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Tipo de panel</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="text" name="tipo_panel_monitor" class="form-control" value="{{ old('tipo_panel_monitor') }}" autocomplete="off">
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Frecuencia (Hz)</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="number" name="frecuencia_hz_monitor" class="form-control" min="0" value="{{ old('frecuencia_hz_monitor') }}" autocomplete="off">
                                     </div>
                                 </div>
@@ -216,20 +236,24 @@
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Lúmenes</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="number" name="lumenes" class="form-control" min="0" value="{{ old('lumenes') }}" autocomplete="off">
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Resolución nativa</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="text" name="resolucion_nativa" class="form-control" value="{{ old('resolucion_nativa') }}" autocomplete="off">
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Tecnología</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="text" name="tecnologia_proyector" class="form-control" value="{{ old('tecnologia_proyector') }}" autocomplete="off">
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="col-md-12 mb-3">
                                         <label class="form-label">Entradas de video</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="text" name="entradas_video" class="form-control" value="{{ old('entradas_video') }}" autocomplete="off">
                                     </div>
                                 </div>
@@ -241,24 +265,29 @@
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Tecnología de impresión</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="text" name="tecnologia_impresion" class="form-control" value="{{ old('tecnologia_impresion') }}" autocomplete="off">
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Color de impresión</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="text" name="color_impresion" class="form-control" value="{{ old('color_impresion') }}" autocomplete="off">
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Resolución (DPI)</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="number" name="resolucion_dpi" class="form-control" min="0" value="{{ old('resolucion_dpi') }}" autocomplete="off">
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Tipo de tinta</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="text" name="tipo_tinta" class="form-control" value="{{ old('tipo_tinta') }}" autocomplete="off">
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Conectividad</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="text" name="conectividad" class="form-control" value="{{ old('conectividad') }}" autocomplete="off">
                                     </div>
                                 </div>
@@ -270,14 +299,17 @@
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Puertos de red</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="text" name="puertos_red" class="form-control" value="{{ old('puertos_red') }}" autocomplete="off">
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Bandas</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="text" name="bandas" class="form-control" value="{{ old('bandas') }}" autocomplete="off">
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Tipo de switch</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="text" name="tipo_switch" class="form-control" value="{{ old('tipo_switch') }}" autocomplete="off">
                                     </div>
                                 </div>
@@ -289,10 +321,12 @@
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Cámara frontal (MP)</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="number" name="camara_frontal_mp" class="form-control" min="0" value="{{ old('camara_frontal_mp') }}" autocomplete="off">
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Almacenamiento expansible</label>
+                                        {{-- ✅ Autocomplete OFF --}}
                                         <input type="text" name="almacenamiento_expansible" class="form-control" value="{{ old('almacenamiento_expansible') }}" autocomplete="off">
                                     </div>
                                 </div>
@@ -303,6 +337,7 @@
                                 <h6 class="mt-3 mb-3 text-primary">Otros Datos</h6>
                                 <div class="mb-3">
                                     <label class="form-label">Otros datos</label>
+                                    {{-- ✅ Autocomplete OFF --}}
                                     <textarea name="otros_datos" class="form-control" rows="2" autocomplete="off">{{ old('otros_datos') }}</textarea>
                                 </div>
                             </div>
@@ -310,15 +345,20 @@
 
                         {{-- ====== Campos Insumo ====== --}}
                         <div id="camposInsumo" style="display:none;">
+                            {{-- IMPORTANTE: Usé nombres de campos diferentes (precio_insumo, sucursal_id_insumo) 
+                                para evitar conflictos con el bloque de equipo en el validador del controller.
+                                Asegúrate de actualizar el controller si no lo has hecho ya. --}}
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="nombreInsumo" class="form-label">Nombre</label>
+                                    {{-- ✅ Autocomplete OFF (a pesar del placeholder) --}}
                                     <input type="text" id="nombreInsumo" name="nombre_insumo" class="form-control" placeholder="Escribe o selecciona un insumo" value="{{ old('nombre_insumo') }}" autocomplete="off">
                                     @error('nombre_insumo') <div class="text-danger">{{ $message }}</div> @enderror
                                 </div>
 
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Cantidad</label>
+                                    {{-- ✅ Autocomplete OFF --}}
                                     <input type="number" name="cantidad" class="form-control" min="1" value="{{ old('cantidad') }}" autocomplete="off">
                                     @error('cantidad') <div class="text-danger">{{ $message }}</div> @enderror
                                 </div>
@@ -327,12 +367,14 @@
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Precio</label>
+                                    {{-- ✅ Autocomplete OFF. Cambié el name a precio_insumo para evitar conflicto con precio de equipo --}}
                                     <input type="number" name="precio_insumo" class="form-control" min="0" step="0.01" value="{{ old('precio_insumo') }}" autocomplete="off">
                                     @error('precio_insumo') <div class="text-danger">{{ $message }}</div> @enderror
                                 </div>
 
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Sucursal</label>
+                                    {{-- Cambié el name a sucursal_id_insumo para evitar conflicto con sucursal_id de equipo --}}
                                     <select name="sucursal_id_insumo" class="form-select">
                                         <option value="">Seleccionar...</option>
                                         @foreach ($sucursales as $sucursal)
@@ -368,6 +410,7 @@
 
                                         <div class="mt-3">
                                             <label class="form-label">Duración de la garantía (meses)</label>
+                                            {{-- ✅ Autocomplete OFF --}}
                                             <input type="number" name="tiempo_garantia_meses" class="form-control" min="0" value="{{ old('tiempo_garantia_meses') }}" autocomplete="off">
                                             @error('tiempo_garantia_meses') <div class="text-danger">{{ $message }}</div> @enderror
                                         </div>
@@ -425,6 +468,7 @@
 
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Fecha de compra</label>
+                                {{-- ✅ Autocomplete OFF --}}
                                 <input type="date" name="fecha_compra" class="form-control" value="{{ old('fecha_compra') }}" autocomplete="off">
                                 @error('fecha_compra') <div class="text-danger">{{ $message }}</div> @enderror
                             </div>
@@ -476,6 +520,7 @@
             </div>
             <div class="card-body text-center">
                 <div class="bg-light p-4 rounded mb-3 border">
+                    {{-- ✅ Se asegura que la fuente de la imagen sea el Base64 generado en el controlador --}}
                     <img id="qrImage" src="{{ session('qr_base64') ?? asset('images/qr-placeholder.png') }}" alt="Código QR" class="img-fluid" style="max-width: 250px;">
                 </div>
                 <p class="text-muted small mb-3">Escanea este código para ver el detalle del equipo registrado.</p>
@@ -494,7 +539,7 @@
     --------------------------- */
 
 (function () {
-    // Helpers - Uso document.querySelector nativo para mayor compatibilidad
+    // Helpers
     const $ = (sel) => document.querySelector(sel);
     const $$ = (sel) => Array.from(document.querySelectorAll(sel));
     const updateStatus = (message, className = '') => {
@@ -515,8 +560,7 @@
     const numeroSerieInput = $('#numero_serie');
     const marcaInput = $('#marca');
     const modeloInput = $('#modelo');
-    // Usamos el ID del campo de equipo para evitar ambigüedades
-    const precioInput = $('#precio_equipo'); 
+    const precioInput = $('#precio_equipo'); // Usar ID específico para evitar ambigüedad
 
     // Inicialización DOMContentLoaded
     document.addEventListener('DOMContentLoaded', () => {
@@ -534,25 +578,15 @@
             buscarIAButton.addEventListener('click', handleBuscarIA);
         }
 
-        // ✅ LÓGICA DE TOGGLE DE DOCUMENTOS - Hacemos el listener más robusto usando getElementById
-        // Esto asegura que el listener se adjunte directamente a los checkbox
-        const toggleFacturas = document.getElementById('toggleFacturas');
-        const listaFacturas = document.getElementById('listaFacturas');
-        const toggleGarantias = document.getElementById('toggleGarantias');
-        const listaGarantias = document.getElementById('listaGarantias');
+        // ✅ Lógica de Autocomplete eliminada (por requisito "sin autocompletado")
 
-        if (toggleFacturas && listaFacturas) {
-            toggleFacturas.addEventListener('change', function () {
-                listaFacturas.style.display = this.checked ? 'block' : 'none';
-            });
-        }
-        
-        if (toggleGarantias && listaGarantias) {
-            toggleGarantias.addEventListener('change', function () {
-                listaGarantias.style.display = this.checked ? 'block' : 'none';
-            });
-        }
-        // =========================================================================================
+        // Toggle listas documentos
+        $('#toggleFacturas')?.addEventListener('change', function () {
+            document.getElementById('listaFacturas').style.display = this.checked ? 'block' : 'none';
+        });
+        $('#toggleGarantias')?.addEventListener('change', function () {
+            document.getElementById('listaGarantias').style.display = this.checked ? 'block' : 'none';
+        });
 
         // Cerrar popup QR
         $('#cerrarQR')?.addEventListener('click', cerrarPopupQR);
@@ -605,7 +639,7 @@
         // mostrar contenedor general
         especificacionesContainer.style.display = 'block';
 
-        // Mapeo
+        // Mapeo: puedes extenderlo si agregas nuevos tipos
         if (['notebook', 'pc escritorio', 'servidor', 'pc', 'desktop'].some(k => tipoClave.includes(k))) {
             $('#bloqueNotebook').style.display = 'block';
         } else if (['smartphone', 'tablet', 'celular', 'móvil'].some(k => tipoClave.includes(k))) {

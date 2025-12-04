@@ -1,132 +1,61 @@
-@import './base.css';
-@import './dark-mode.css';
-
-/* ==================================================================== */
-/* Carga de Tailwind CSS (para utilidades responsive) */
-/* NOTA: Estas directivas deben ir antes de los estilos fijos para evitar conflictos. */
-/* ==================================================================== */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* ==================================================================== */
-/* Estilos Específicos del Layout (CORREGIDOS) */
-/* ==================================================================== */
-
-:root {
-    --sidebar-width: 250px;
-    --coyahue-orange: #ff6b35; /* Color corporativo */
-    --coyahue-dark: #343a40;
-    --primary-alt: #4e73df; /* Color primario alternativo */
-}
-
-.bg-orange {
-    background-color: var(--coyahue-orange) !important;
-}
-
-.bg-primary-alt {
-    background-color: var(--primary-alt) !important;
-}
-
-/* Asegurar que el texto sea blanco en bg-primary-alt */
-.bg-primary-alt,
-.bg-primary-alt .card-title,
-.bg-primary-alt h1,
-.bg-primary-alt h2,
-.bg-primary-alt h3,
-.bg-primary-alt h4,
-.bg-primary-alt h5,
-.bg-primary-alt h6 {
-    color: white !important;
-}
-
-/* 1. LAYOUT WRAPPER (Contenedor principal) */
-.layout-wrapper {
+/*
+ * Base CSS Styles
+ * Estilos base y de layout
+ */
+body {
     min-height: 100vh;
-    width: 100%;
-    /* Desactivar flex en el contenedor principal si no es necesario para evitar interferencia */
-    display: block;
+    display: flex;
+    flex-direction: column;
 }
 
-/* 2. SIDEBAR (Barra Lateral) */
+.content-wrapper {
+    flex: 1 0 auto;
+    padding-top: 20px; /* Espacio debajo del header/nav */
+}
+
+/* Sidebar Styling */
 .sidebar {
-    width: var(--sidebar-width);
-    background-color: var(--coyahue-dark);
-    color: #fff;
-    transition: all 0.3s ease;
-
-    /* Fijo y a la izquierda para "correr el menú hacia atrás" */
+    height: 100vh;
     position: fixed;
-    left: 0;
     top: 0;
-    height: 100%;
-    z-index: 1000;
-    overflow-y: auto;
+    left: 0;
+    width: 250px;
+    /* CORRECCIÓN CLAVE: Usamos la variable naranja para el fondo del sidebar */
+    background-color: var(--coyahue-orange, #dc8428); 
+    color: #fff;
+    padding-top: 56px; /* Espacio para el Navbar fijo */
 }
 
-.sidebar a {
-    color: #c0c4c8;
-    padding: 1rem;
-    display: block;
-    transition: all 0.2s;
+.sidebar .nav-link {
+    /* Ajustamos el color del texto para que contraste con el fondo naranja */
+    color: #fff;
+    padding: 10px 15px;
 }
 
-.sidebar a:hover {
-    background-color: #495057;
-    color: white;
+/* ACENTO NARANJA DEL SIDEBAR */
+.sidebar .nav-link.active,
+.sidebar .nav-link:hover {
+    /* El fondo ya es naranja, usamos un color más claro/oscuro o un tono más suave para el hover */
+    color: #fff;
+    background-color: rgba(0, 0, 0, 0.1); /* Fondo sutilmente más oscuro en hover */
+    border-left: 3px solid #fff; /* Borde blanco para resaltar */
 }
 
-.sidebar a.active {
-    background-color: var(--coyahue-orange);
-    color: white;
-    font-weight: bold;
-    border-left: 5px solid white;
-}
-
-/* Estado Colapsado: Mover fuera de la pantalla */
-.sidebar.collapsed {
-    width: 0;
-    left: calc(0px - var(--sidebar-width)); /* Mueve el sidebar fuera de la pantalla */
-}
-
-/* 3. MAIN CONTENT (Contenido Principal) */
+/* Main Content Adjustments */
 .main-content {
-    /* Empujar el contenido a la derecha para dejar espacio al sidebar */
-    margin-left: var(--sidebar-width);
-    width: calc(100% - var(--sidebar-width)); /* Ajustar ancho total */
-    transition: margin-left 0.3s ease, width 0.3s ease;
+    margin-left: 250px; /* Ajuste para el sidebar fijo */
+    padding: 20px;
     flex-grow: 1;
 }
 
-/* Estado del Contenido cuando el Sidebar está colapsado */
-.main-content.expanded {
-    margin-left: 0; /* Permite que el contenido ocupe todo el ancho */
-    width: 100%;
+/* Header/Navbar */
+.navbar {
+    z-index: 1030; /* Asegura que la navbar esté sobre otros elementos */
 }
 
-/* Responsividad (Móviles) */
-@media (max-width: 768px) {
-    .sidebar {
-        /* En móvil, el sidebar siempre inicia colapsado (oculto) */
-        left: calc(0px - var(--sidebar-width));
-        width: var(--sidebar-width);
-    }
-
-    .sidebar.collapsed {
-        left: calc(0px - var(--sidebar-width)); /* Oculto por defecto */
-    }
-
-    .sidebar:not(.collapsed) {
-        left: 0; /* Muestra el menú al hacer clic */
-    }
-
-    .main-content {
-        margin-left: 0; /* En móvil, el contenido no se desplaza */
-        width: 100%;
-    }
-
-    .main-content.expanded {
-        margin-left: 0;
-        width: 100%;
-    }
+/* Utilidades */
+/* ACENTO NARANJA EN FOCO DE FORMULARIOS */
+.form-control:focus {
+    border-color: var(--coyahue-orange, #dc8428);
+    box-shadow: 0 0 0 0.25rem rgba(220, 132, 40, 0.25);
 }

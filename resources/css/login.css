@@ -1,47 +1,55 @@
+/*
+ * Login CSS Styles
+ */
+
+body {
+    background-color: #f4f7f6; /* Fondo suave */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
 .login-container {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #ff6b35 0%, #ff8e53 100%);
+    max-width: 400px;
+    width: 100%;
+    padding: 30px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
-.login-card {
-    border-radius: 15px;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.3);
-    border: none;
-    background: white;
+
+.login-header {
+    text-align: center;
+    margin-bottom: 25px;
 }
-.logo-login {
-    max-height: 120px;
+
+.login-header img {
+    max-height: 60px;
+    margin-bottom: 10px;
 }
-.btn-login {
-    background: linear-gradient(135deg, #ff6b35 0%, #ff8e53 100%);
-    border: none;
-    color: white;
-    font-weight: 600;
-    padding: 12px;
-    transition: all 0.3s;
-}
-.btn-login:hover {
-    background: linear-gradient(135deg, #e55a2b 0%, #e57a42 100%);
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(255, 107, 53, 0.4);
-}
-.form-control:focus {
-    border-color: #ff6b35;
-    box-shadow: 0 0 0 0.3rem rgba(255, 107, 53, 0.25);
-}
-.input-group-text {
-    background-color: #f8f9fa;
-    border-color: #ced4da;
-}
-.card-title {
-    color: #ff6b35;
+
+/* ACENTO NARANJA EN EL TÍTULO DEL LOGIN */
+.login-header h2 {
+    color: var(--coyahue-orange, #dc8428); 
     font-weight: 700;
+    margin-top: 10px;
 }
-.forgot-link {
-    color: #ff6b35;
-    text-decoration: none;
+
+.btn-login {
+    background-color: #007bff;
+    border-color: #007bff;
+    transition: background-color 0.3s;
 }
-.forgot-link:hover {
-    color: #e55a2b;
-    text-decoration: underline;
+
+.btn-login:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+
+/* Enlaces pequeños */
+.forgot-password {
+    text-align: right;
+    font-size: 0.85em;
 }

@@ -13,7 +13,7 @@
 
 :root {
     --sidebar-width: 250px;
-    --coyahue-orange: #ff8c00; 
+    --coyahue-orange: #dc8428; /* ESTANDARIZADO: Color naranja principal */
     --coyahue-dark: #343a40;
 }
 
@@ -35,7 +35,7 @@
 /* 2. SIDEBAR (Barra Lateral) */
 .sidebar {
     width: var(--sidebar-width);
-    background-color: var(--coyahue-dark);
+    background-color: var(--coyahue-dark); /* Se mantiene oscuro para contraste */
     color: #fff;
     transition: all 0.3s ease;
     

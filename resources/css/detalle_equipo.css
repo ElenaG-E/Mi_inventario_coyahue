@@ -1,18 +1,49 @@
-.bg-orange {
-    background: #ff6b35 !important;
+/*
+ * Detalle Equipo CSS Styles
+ */
+
+/* Estilos de las pestañas */
+.nav-tabs .nav-link {
+    color: #495057;
+    border: none;
+    border-bottom: 2px solid transparent;
 }
-.card-title i {
-    color: white;
+
+.nav-tabs .nav-link.active {
+    color: #dc8428;
+    border-bottom: 2px solid #dc8428;
+    background-color: transparent;
 }
-.timeline-marker {
-    width: 12px;
-    height: 12px;
-    margin-top: 5px;
+
+.tab-pane {
+    padding-top: 20px;
 }
-.timeline-content h6 {
-    font-weight: 600;
+
+/* Estilos para el historial de movimientos/asignaciones */
+.list-group-item.historial {
+    border-left: 3px solid #dc8428;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
 }
-.badge {
-    font-size: 0.85rem;
-    padding: 0.4em 0.6em;
+
+.list-group-item.historial:hover {
+    background-color: #f8f9fa;
+}
+
+.historial .fecha {
+    font-size: 0.8em;
+    color: #6c757d;
+}
+
+/* Estilo para el QR grande */
+#qr-display {
+    text-align: center;
+    margin-top: 20px;
+}
+
+#qr-display img {
+    max-width: 250px;
+    height: auto;
+    border: 1px solid #ccc;
 }

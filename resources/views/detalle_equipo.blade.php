@@ -99,6 +99,35 @@
             </div>
         </div>
         @endif
+        
+        {{-- ================= DOCUMENTOS ASOCIADOS (FACTURAS Y GARANTÍAS) ================= --}}
+        <div class="card shadow mb-4">
+            <div class="card-header text-white bg-info">
+                <h5 class="card-title mb-0"><i class="fas fa-file-alt me-2"></i> Documentos Asociados</h5>
+            </div>
+            <div class="card-body">
+                @forelse($equipo->documentos as $documento)
+                    <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                        <div>
+                            <i class="fas fa-file-{{ $documento->tipo == 'factura' ? 'invoice' : 'shield' }} me-2 text-{{ $documento->tipo == 'factura' ? 'primary' : 'success' }}"></i>
+                            <strong>{{ ucfirst($documento->tipo) }}:</strong> {{ $documento->nombre_archivo }}
+                            
+                            @if($documento->tipo == 'garantia' && $documento->tiempo_garantia_meses)
+                                <span class="badge bg-success ms-2">
+                                    Vigencia: {{ $documento->tiempo_garantia_meses }} meses
+                                </span>
+                            @endif
+                        </div>
+                        <a href="{{ route('documento.descargar', $documento->id) }}" class="btn btn-sm btn-outline-secondary" target="_blank" title="Descargar {{ $documento->nombre_archivo }}">
+                            <i class="fas fa-download"></i> Descargar
+                        </a>
+                    </div>
+                @empty
+                    <p class="text-muted">No hay documentos (facturas o garantías) asociados a este equipo.</p>
+                @endforelse
+            </div>
+        </div>
+        {{-- ================= FIN DOCUMENTOS ASOCIADOS ================= --}}
 
         <div class="card shadow mb-4">
             <div class="card-header text-white bg-secondary">
@@ -145,17 +174,28 @@
 
                 @php
                     $qrUrl = route('inventario.equipo', $equipo->id);
+                    $qrBase64 = ''; // Inicializar la variable
+                    
+                    // La lógica del QR fue movida al controlador para generar el Base64 y guardarlo
+                    // Si el controlador guardó el Base64 directamente, lo usamos
+                    $qrSrc = $equipo->qr_code;
 
-                    try {
-                        $qrCode = QrCode::format('png')
-                            ->size(250)
-                            ->margin(2)
-                            ->errorCorrection('H')
-                            ->generate($qrUrl); 
-                        
-                        $qrBase64 = 'data:image/png;base64,' . base64_encode($qrCode);
-                    } catch (\Exception $e) {
-                        $qrBase64 = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" . urlencode($qrUrl); 
+                    // Si el qr_code contiene solo la URL, regeneramos el Base64 (redundante si el store funciona bien)
+                    if (!$qrSrc || (!str_starts_with($qrSrc, 'data:image') && str_contains($qrSrc, 'http'))) {
+                        try {
+                            $qrCode = QrCode::format('png')
+                                ->size(250)
+                                ->margin(2)
+                                ->errorCorrection('H')
+                                ->generate($qrUrl);
+                            
+                            $qrBase64 = 'data:image/png;base64,' . base64_encode($qrCode);
+                            $qrSrc = $qrBase64; // Usar el generado
+                        } catch (\Exception $e) {
+                            $qrSrc = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" . urlencode($qrUrl); 
+                        }
+                    } else {
+                        $qrSrc = $equipo->qr_code;
                     }
 
                     $modeloSlug = \Illuminate\Support\Str::slug($equipo->modelo);
@@ -164,7 +204,7 @@
                 <p class="text-muted small">Escanea para ver la información del equipo</p>
 
                 <img id="qrImageDetail"
-                    src="{{ $qrBase64 }}"
+                    src="{{ $qrSrc }}"
                     alt="QR {{ $equipo->modelo }}"
                     class="img-fluid mx-auto d-block mb-3"
                     style="max-width: 250px;">
@@ -199,7 +239,7 @@
                         </button>
                         <ul class="dropdown-menu">
                             <li>
-                                {{-- Opción 1: PDF --}}
+                                {{-- Opción 1: PDF Individual (Documento) --}}
                                 <a class="dropdown-item" href="{{ route('equipo.reporte', ['id' => $equipo->id, 'formato' => 'pdf']) }}" target="_blank">
                                     <i class="fas fa-file-pdf me-2 text-danger"></i> PDF (Documento)
                                 </a>

@@ -21,7 +21,7 @@
 </div>
 
 <div class="card shadow">
-    <div class="card-header bg-white">
+    <div class="card-header bg-orange text-white">
         <h5 class="card-title mb-0">Lista de Proveedores</h5>
     </div>
     <div class="card-body">

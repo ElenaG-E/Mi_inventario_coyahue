@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Storage; // Importación necesaria
 
 class RegistroEquipoController extends Controller
 {
@@ -43,8 +44,10 @@ class RegistroEquipoController extends Controller
         $tipos             = TipoEquipo::all();
         $proveedores       = Proveedor::all();
         $estados           = EstadoEquipo::all();
+        // Mostrar TODOS los documentos (disponibles o ya asociados)
         $facturas          = Documento::where('tipo', 'factura')->get();
         $garantias         = Documento::where('tipo', 'garantia')->get();
+
         $insumosExistentes = Insumo::select('nombre')->distinct()->get();
         $sucursales        = Sucursal::all();
         $usuarios          = Usuario::all();
@@ -53,15 +56,15 @@ class RegistroEquipoController extends Controller
             'tipos',
             'proveedores',
             'estados',
-            'facturas',
-            'garantias',
+            'facturas', // Ahora contiene todos los documentos de tipo factura
+            'garantias', // Ahora contiene todos los documentos de tipo garantía
             'insumosExistentes',
             'sucursales',
             'usuarios'
         ));
     }
 
-    // Eliminar equipo/insumo
+    // Eliminar equipo o insumo
     public function destroy(Request $request, $id)
     {
         $request->validate([
@@ -84,52 +87,73 @@ class RegistroEquipoController extends Controller
         return redirect()->route('inventario')->with('success', 'Item eliminado correctamente.');
     }
 
-    // Actualizar insumo o equipo
+    // Actualizar equipo o insumo
     public function update(Request $request, $id)
     {
-        // Lógica de actualización de INSUMO
         if ($request->categoria === 'insumo') {
-            $insumo      = Insumo::findOrFail($id);
-            $oldSucursal = $insumo->sucursal_id;
+            return $this->updateInsumo($request, $id);
+        } else {
+            return $this->updateEquipo($request, $id);
+        }
+    }
 
-            $request->validate([
-                'nombre'            => 'nullable|string|max:255',
-                'cantidad'          => 'nullable|integer|min:0',
-                'estado_equipo_id'  => 'nullable|exists:estados_equipo,id',
-                'proveedor_id'      => 'nullable|exists:proveedores,id',
-                'sucursal_id'       => 'nullable|exists:sucursales,id',
-                'precio'            => 'nullable|numeric|min:0',
-                'usuario_id'        => 'nullable|exists:usuarios,id',
-                'cantidad_asignada' => 'nullable|integer|min:1',
-                'motivo'            => 'nullable|string|max:255',
-            ]);
+    private function updateInsumo(Request $request, $id)
+    {
+        $insumo = Insumo::findOrFail($id);
+        $oldSucursal = $insumo->sucursal_id;
 
-            $insumo->update($request->only([
-                'nombre', 'cantidad', 'estado_equipo_id', 'proveedor_id', 'sucursal_id', 'precio',
-            ]));
+        $request->validate([
+            'nombre'            => 'nullable|string|max:255',
+            'cantidad'          => 'nullable|integer|min:0',
+            'estado_equipo_id'  => 'nullable|exists:estados_equipo,id',
+            'proveedor_id'      => 'nullable|exists:proveedores,id',
+            'sucursal_id'       => 'nullable|exists:sucursales,id',
+            'precio'            => 'nullable|numeric|min:0',
+            'usuario_id'        => 'nullable|exists:usuarios,id',
+            'cantidad_asignada' => 'nullable|integer|min:1',
+            'motivo'            => 'nullable|string|max:255',
+        ]);
 
-            if ($request->filled('sucursal_id') && $oldSucursal != $request->sucursal_id) {
-                $sucursalNombre = Sucursal::find($request->sucursal_id)?->nombre ?? 'N/A';
-                $insumo->registrarMovimiento('Cambio de Sucursal', 'Sucursal cambiada a: ' . $sucursalNombre);
-            }
-            if ($request->filled('usuario_id')) {
-                AsignacionInsumo::where('insumo_id', $insumo->id)->whereNull('fecha_fin')->update(['fecha_fin' => now()]);
-                AsignacionInsumo::create([
-                    'insumo_id'        => $insumo->id,
-                    'usuario_id'       => $request->usuario_id,
-                    'cantidad'         => $request->cantidad_asignada ?? 1,
-                    'fecha_asignacion' => now(),
-                    'motivo'           => $request->motivo ?? 'Cambio de Usuario',
-                ]);
-            } else {
-                AsignacionInsumo::where('insumo_id', $insumo->id)->whereNull('fecha_fin')->update(['fecha_fin' => now(), 'motivo'    => $request->motivo ?? 'Desasignación de usuario']);
-            }
+        $insumo->update($request->only([
+            'nombre',
+            'cantidad',
+            'estado_equipo_id',
+            'proveedor_id',
+            'sucursal_id',
+            'precio',
+        ]));
 
-            return redirect()->route('inventario.insumo', $insumo->id)->with('success', 'Insumo actualizado correctamente.');
+        if ($request->filled('sucursal_id') && $oldSucursal != $request->sucursal_id) {
+            $sucursalNombre = Sucursal::find($request->sucursal_id)?->nombre ?? 'N/A';
+            $insumo->registrarMovimiento('Cambio de Sucursal', 'Sucursal cambiada a: ' . $sucursalNombre);
         }
 
-        // Lógica de actualización de EQUIPO
-        $equipo      = Equipo::findOrFail($id);
+        if ($request->filled('usuario_id')) {
+            AsignacionInsumo::where('insumo_id', $insumo->id)->whereNull('fecha_fin')->update(['fecha_fin' => now()]);
+
+            AsignacionInsumo::create([
+                'insumo_id'        => $insumo->id,
+                'usuario_id'       => $request->usuario_id,
+                'cantidad'         => $request->cantidad_asignada ?? 1,
+                'fecha_asignacion' => now(),
+                'motivo'           => $request->motivo ?? 'Cambio de Usuario',
+            ]);
+        } else {
+            AsignacionInsumo::where('insumo_id', $insumo->id)
+                ->whereNull('fecha_fin')
+                ->update([
+                    'fecha_fin' => now(),
+                    'motivo'    => $request->motivo ?? 'Desasignación de usuario'
+                ]);
+        }
+
+        return redirect()->route('inventario.insumo', $insumo->id)
+                         ->with('success', 'Insumo actualizado correctamente.');
+    }
+
+    private function updateEquipo(Request $request, $id)
+    {
+        $equipo = Equipo::findOrFail($id);
         $oldSucursal = $equipo->sucursal_id;
 
         $request->validate([
@@ -145,11 +169,27 @@ class RegistroEquipoController extends Controller
         ]);
 
         $equipo->update($request->only([
-            'marca', 'modelo', 'numero_serie', 'estado_equipo_id', 'proveedor_id', 'sucursal_id', 'precio',
+            'marca',
+            'modelo',
+            'numero_serie',
+            'estado_equipo_id',
+            'proveedor_id',
+            'sucursal_id',
+            'precio',
         ]));
+
+        if ($request->filled('sucursal_id') && $oldSucursal != $request->sucursal_id) {
+            $sucursalNombre = Sucursal::find($request->sucursal_id)?->nombre ?? 'N/A';
+            $equipo->registrarMovimiento('Cambio de Sucursal', 'Sucursal cambiada a: ' . $sucursalNombre);
+        }
+
+        if ($request->estado_equipo_id == 4) {
+            $equipo->registrarMovimiento('Baja', 'Equipo dado de baja');
+        }
 
         if ($request->filled('usuario_id')) {
             Asignacion::where('equipo_id', $equipo->id)->whereNull('fecha_fin')->update(['fecha_fin' => now()]);
+
             Asignacion::create([
                 'equipo_id'        => $equipo->id,
                 'usuario_id'       => $request->usuario_id,
@@ -157,166 +197,271 @@ class RegistroEquipoController extends Controller
                 'motivo'           => $request->motivo ?? 'Cambio de Usuario',
             ]);
         } else {
-            Asignacion::where('equipo_id', $equipo->id)->whereNull('fecha_fin')->update(['fecha_fin' => now(), 'motivo'    => $request->motivo ?? 'Desasignación de usuario']);
+            Asignacion::where('equipo_id', $equipo->id)
+                ->whereNull('fecha_fin')
+                ->update([
+                    'fecha_fin' => now(),
+                    'motivo'    => $request->motivo ?? 'Desasignación de usuario'
+                ]);
         }
 
-        return redirect()->route('inventario.equipo', $equipo->id)->with('success', 'Equipo actualizado correctamente.');
+        return redirect()->route('inventario.equipo', $equipo->id)
+                         ->with('success', 'Equipo actualizado correctamente.');
     }
 
-    /**
-     * ============================
-     * STORE (EQUIPO/INSUMO) - Genera QR dinámico
-     * ============================
-     */
+    // Store para equipos e insumos (redirige)
     public function store(Request $request)
     {
         if ($request->categoria === 'equipo') {
-            $request->validate([
-                'tipo_equipo_id'   => 'required|exists:tipos_equipo,id',
-                'proveedor_id'     => 'nullable|exists:proveedores,id',
-                'estado_equipo_id' => 'nullable|exists:estados_equipo,id',
-                'sucursal_id'      => 'nullable|exists:sucursales,id',
-                'marca'            => 'nullable|string|max:100',
-                'modelo'           => 'nullable|string|max:100',
-                'numero_serie'     => 'nullable|string|max:100|unique:equipos,numero_serie',
-                'precio'           => 'nullable|numeric|min:0',
-                'fecha_compra'     => 'nullable|date',
-                'fecha_registro'   => 'nullable|date',
-                'usuario_id'       => 'nullable|exists:usuarios,id',
-                'motivo'           => 'nullable|string|max:255',
-                'especificaciones_ia' => 'nullable|string', 
-            ]);
-
-            $estadoDisponibleId = EstadoEquipo::where('nombre', 'Disponible')->first()->id;
-
-            // Crear el equipo primero sin el qr_code
-            $equipo = Equipo::create([
-                'tipo_equipo_id'   => $request->tipo_equipo_id,
-                'proveedor_id'     => $request->proveedor_id,
-                'estado_equipo_id' => $request->estado_equipo_id ?? $estadoDisponibleId,
-                'sucursal_id'      => $request->sucursal_id,
-                'marca'            => $request->marca,
-                'modelo'           => $request->modelo,
-                'numero_serie'     => $request->numero_serie,
-                'precio'           => $request->precio,
-                'fecha_compra'     => $request->fecha_compra,
-                'fecha_registro'   => $request->fecha_registro ?? now(),
-                'qr_code'          => null, // Se actualizará después
-                'estado'           => 'activo',
-            ]);
-            
-            // Generar la URL completa del equipo
-            $qrUrl = route('inventario.equipo', $equipo->id);
-            
-            // Actualizar el campo qr_code con la URL completa
-            $equipo->update(['qr_code' => $qrUrl]);
-
-            $equipo->registrarMovimiento('Registro de Equipo', 'Equipo creado en el sistema');
-
-            if ($request->filled('usuario_id')) {
-                Asignacion::create([
-                    'equipo_id'        => $equipo->id,
-                    'usuario_id'       => $request->usuario_id,
-                    'fecha_asignacion' => now(),
-                    'motivo'           => $request->motivo ?? 'Asignación inicial',
-                ]);
-            }
-
-            // Guardar la especificación (incluye resumen_ia en la columna resumen_ia)
-            $especificacionData = $request->only((new EspecificacionTecnica)->getFillable());
-            $especificacionData['resumen_ia'] = $request->especificaciones_ia ?? null; 
-            
-            EspecificacionTecnica::create(
-                array_merge(
-                    ['equipo_id' => $equipo->id],
-                    $especificacionData
-                )
-            );
-
-            // ----------------------------------------------------
-            // LÓGICA DE GENERACIÓN DINÁMICA DEL QR
-            // ----------------------------------------------------
-            // La URL ya fue generada y guardada en el campo qr_code
-            
-            // Generación real del QR en formato Base64
-            try {
-                // Genera el código QR como PNG y lo convierte a Base64
-                $qrImage = QrCode::format('png')
-                    ->size(250)
-                    ->margin(2)
-                    ->errorCorrection('H')
-                    ->generate($qrUrl);
-                
-                // Convertir la imagen PNG a Base64
-                $qrBase64 = 'data:image/png;base64,' . base64_encode($qrImage);
-                
-            } catch (\Exception $e) {
-                // Fallback si la librería no está disponible o falla
-                Log::error("QR Generation Failed: " . $e->getMessage());
-                
-                // Opción 1: Usar una imagen placeholder
-                if (file_exists(public_path('images/qr-placeholder.png'))) {
-                    $qrBase64 = "data:image/png;base64," . base64_encode(file_get_contents(public_path('images/qr-placeholder.png')));
-                } else {
-                    // Opción 2: Crear un QR simple con una API externa como fallback
-                    $qrBase64 = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" . urlencode($qrUrl);
-                }
-            }
-
-            return redirect()->route('registro_equipo.create')
-                ->with('success', 'Equipo registrado correctamente.')
-                ->with('qr_generado', true)
-                ->with('qr_base64', $qrBase64)
-                ->with('equipo_id', $equipo->id);
+            return $this->storeEquipo($request);
+        } elseif ($request->categoria === 'insumo') {
+            return $this->storeInsumoData($request);
         }
+        return redirect()->route('registro_equipo.create')->with('error', 'Debe seleccionar una categoría válida.');
+    }
+
+    // Store para insumos (ya no es necesario, pero lo mantengo si tienes rutas separadas)
+    public function storeInsumo(Request $request)
+    {
+        return $this->storeInsumoData($request);
+    }
+
+    private function storeEquipo(Request $request)
+    {
+        $request->validate([
+            'tipo_equipo_id'   => 'required|exists:tipos_equipo,id',
+            'proveedor_id'     => 'nullable|exists:proveedores,id',
+            'estado_equipo_id' => 'nullable|exists:estados_equipo,id',
+            'sucursal_id'      => 'nullable|exists:sucursales,id',
+            'marca'            => 'nullable|string|max:100',
+            'modelo'           => 'nullable|string|max:100',
+            'numero_serie'     => 'nullable|string|max:100|unique:equipos,numero_serie',
+            'precio'           => 'nullable|numeric|min:0',
+            'fecha_compra'     => 'nullable|date',
+            'fecha_registro'   => 'nullable|date',
+            'usuario_id'       => 'nullable|exists:usuarios,id',
+            'motivo'           => 'nullable|string|max:255',
+            'especificaciones_ia' => 'nullable|string',
+            // Validaciones de documentos
+            'documentos_factura.*'  => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'documentos_garantia.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+        ]);
+
+        $estadoDisponibleId = EstadoEquipo::where('nombre','Disponible')->first()->id ?? 1;
+
+        $equipo = Equipo::create([
+            'tipo_equipo_id'   => $request->tipo_equipo_id,
+            'proveedor_id'     => $request->proveedor_id,
+            'estado_equipo_id' => $request->estado_equipo_id ?? $estadoDisponibleId,
+            'sucursal_id'      => $request->sucursal_id,
+            'marca'            => $request->marca,
+            'modelo'           => $request->modelo,
+            'numero_serie'     => $request->numero_serie,
+            'precio'           => $request->precio,
+            'fecha_compra'     => $request->fecha_compra,
+            'fecha_registro'   => $request->fecha_registro ?? now(),
+            'qr_code'          => null,
+            'estado'           => 'activo',
+        ]);
+
+        $qrUrl = route('inventario.equipo', $equipo->id);
+        $equipo->update(['qr_code' => $qrUrl]);
+
+        $equipo->registrarMovimiento('Registro de Equipo', 'Equipo creado en el sistema');
+
+        if ($request->filled('usuario_id')) {
+            Asignacion::create([
+                'equipo_id'        => $equipo->id,
+                'usuario_id'       => $request->usuario_id,
+                'fecha_asignacion' => now(),
+                'motivo'           => $request->motivo ?? 'Asignación inicial',
+            ]);
+        }
+
+        $especificacionesData = $request->only((new EspecificacionTecnica)->getFillable());
+        $especificacionesData['resumen_ia'] = $request->especificaciones_ia ?? null;
         
-        // Lógica de STORE INSUMO
-        if ($request->categoria === 'insumo') {
-             $request->validate([
-                'nombre_insumo'     => 'required|string|max:255',
-                'cantidad'          => 'required|integer|min:0',
-                'estado_equipo_id'  => 'nullable|exists:estados_equipo,id',
-                'proveedor_id'      => 'nullable|exists:proveedores,id',
-                'sucursal_id'       => 'nullable|exists:sucursales,id',
-                'precio'            => 'nullable|numeric|min:0',
-                'fecha_compra'      => 'nullable|date',
-                'fecha_registro'    => 'nullable|date',
-                'usuario_id'        => 'nullable|exists:usuarios,id',
-                'cantidad_asignada' => 'nullable|integer|min:1',
-                'motivo'            => 'nullable|string|max:255',
-            ]);
-
-            $estadoDisponibleId = EstadoEquipo::where('nombre', 'Disponible')->first()->id;
-
-            $insumo = Insumo::create([
-                'nombre'           => $request->nombre_insumo,
-                'cantidad'         => $request->cantidad,
-                'estado_equipo_id' => $request->estado_equipo_id ?? $estadoDisponibleId,
-                'proveedor_id'     => $request->proveedor_id,
-                'sucursal_id'      => $request->sucursal_id,
-                'precio'           => $request->precio,
-                'fecha_compra'     => $request->fecha_compra,
-                'fecha_registro'   => $request->fecha_registro ?? now(),
-            ]);
-
-            $insumo->registrarMovimiento('Registro de Insumo', 'Insumo creado en el sistema');
-
-            if ($request->filled('usuario_id')) {
-                AsignacionInsumo::create([
-                    'insumo_id'        => $insumo->id,
-                    'usuario_id'       => $request->usuario_id,
-                    'cantidad'         => $request->cantidad_asignada ?? 1,
-                    'fecha_asignacion' => now(),
-                    'motivo'           => $request->motivo ?? 'Asignación inicial',
-                ]);
-            }
-            return redirect()->route('registro_equipo.create')->with('success', 'Insumo registrado correctamente.');
+        if (!empty(array_filter($especificacionesData))) {
+            EspecificacionTecnica::create(array_merge(
+                ['equipo_id' => $equipo->id],
+                $especificacionesData
+            ));
         }
+
+        // ✅ CORRECCIÓN: Pasar la Clase completa para el tipo polimórfico
+        $this->procesarDocumentos($request, $equipo, Equipo::class); 
+        
+        // Lógica de generación de QR para el pop-up
+        try {
+            $qrImage = QrCode::format('png')
+                ->size(250)
+                ->margin(2)
+                ->errorCorrection('H')
+                ->generate($qrUrl);
+            
+            $qrBase64 = 'data:image/png;base64,' . base64_encode($qrImage);
+        } catch (\Exception $e) {
+            Log::error("QR Generation Failed: " . $e->getMessage());
+            $qrBase64 = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" . urlencode($qrUrl);
+        }
+
+        return redirect()->route('registro_equipo.create')
+                         ->with('success', 'Equipo registrado correctamente.')
+                         ->with('qr_generado', true)
+                         ->with('qr_base64', $qrBase64)
+                         ->with('equipo_id', $equipo->id);
+    }
+
+    private function storeInsumoData(Request $request)
+    {
+        $request->validate([
+            'nombre_insumo'    => 'required|string|max:255',
+            'cantidad'         => 'required|integer|min:1',
+            'estado_equipo_id' => 'nullable|exists:estados_equipo,id',
+            'proveedor_id'     => 'nullable|exists:proveedores,id',
+            'sucursal_id'      => 'nullable|exists:sucursales,id',
+            'precio'           => 'nullable|numeric|min:0',
+            'fecha_compra'     => 'nullable|date',
+            'fecha_registro'   => 'nullable|date',
+            'usuario_id'       => 'nullable|exists:usuarios,id',
+            'cantidad_asignada'=> 'nullable|integer|min:1',
+            'motivo'           => 'nullable|string|max:255',
+            // Validaciones de documentos
+            'documentos_factura.*'  => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'documentos_garantia.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+        ]);
+
+        $estadoDisponibleId = EstadoEquipo::where('nombre','Disponible')->first()->id ?? 1;
+
+        $insumo = Insumo::create([
+            'nombre'           => $request->nombre_insumo,
+            'cantidad'         => $request->cantidad,
+            'estado_equipo_id' => $request->estado_equipo_id ?? $estadoDisponibleId,
+            'proveedor_id'     => $request->proveedor_id,
+            'sucursal_id'      => $request->sucursal_id,
+            'precio'           => $request->precio,
+            'fecha_compra'     => $request->fecha_compra,
+            'fecha_registro'   => $request->fecha_registro ?? now(),
+        ]);
+
+        $insumo->registrarMovimiento('Registro de Insumo', 'Insumo creado en el sistema');
+
+        if ($request->filled('usuario_id')) {
+            AsignacionInsumo::create([
+                'insumo_id'        => $insumo->id,
+                'usuario_id'       => $request->usuario_id,
+                'cantidad'         => $request->cantidad_asignada ?? 1,
+                'fecha_asignacion' => now(),
+                'motivo'           => $request->motivo ?? 'Asignación inicial',
+            ]);
+        }
+
+        // ✅ CORRECCIÓN: Pasar la Clase completa para el tipo polimórfico
+        $this->procesarDocumentos($request, $insumo, Insumo::class);
+
+        return redirect()->route('registro_equipo.create')
+                         ->with('success', 'Insumo registrado correctamente.');
     }
 
     /**
-     * Buscar datos del equipo utilizando IA (Google Gemini)
+     * Procesa la subida de documentos (facturas y garantías) y los asocia a un modelo.
+     *
+     * @param Request $request
+     * @param Model $model El modelo a asociar (Equipo o Insumo)
+     * @param string $documentableType El tipo de modelo polimórfico (e.g., Equipo::class)
      */
+    protected function procesarDocumentos(Request $request, $model, string $documentableType)
+    {
+        // Procesar facturas subidas
+        if ($request->hasFile('documentos_factura')) {
+            foreach ($request->file('documentos_factura') as $archivo) {
+                if ($archivo->isValid()) {
+                    $nombreArchivo = $archivo->getClientOriginalName();
+                    
+                    // ✅ CORRECCIÓN 1: Usamos el disco 'public'
+                    $ruta = $archivo->store('documentos', 'public'); 
+                    
+                    Documento::create([
+                        'nombre_archivo'    => $nombreArchivo,
+                        'ruta_s3'           => $ruta, // ✅ CORRECCIÓN 2: Corregida la columna a 'ruta_s3'
+                        'clave_s3'          => basename($ruta),
+                        'tipo'              => 'factura',
+                        'mime_type'         => $archivo->getMimeType(), // Añadidos campos
+                        'tamaño_bytes'      => $archivo->getSize(),
+                        'fecha_subida'      => now(), // Añadidos campos
+                        'documentable_id'   => $model->id,
+                        'documentable_type' => $documentableType,
+                        'usuario_id'        => auth()->id(),
+                    ]);
+                }
+            }
+        }
+
+        // Procesar garantías subidas
+        if ($request->hasFile('documentos_garantia')) {
+            foreach ($request->file('documentos_garantia') as $archivo) {
+                if ($archivo->isValid()) {
+                    $nombreArchivo = $archivo->getClientOriginalName();
+                    
+                    // ✅ CORRECCIÓN 1: Usamos el disco 'public'
+                    $ruta = $archivo->store('documentos', 'public'); 
+
+                    Documento::create([
+                        'nombre_archivo'    => $nombreArchivo,
+                        'ruta_s3'           => $ruta, // ✅ CORRECCIÓN 2: Corregida la columna a 'ruta_s3'
+                        'clave_s3'          => basename($ruta),
+                        'tipo'              => 'garantia',
+                        'mime_type'         => $archivo->getMimeType(), // Añadidos campos
+                        'tamaño_bytes'      => $archivo->getSize(),
+                        'fecha_subida'      => now(), // Añadidos campos
+                        'documentable_id'   => $model->id,
+                        'documentable_type' => $documentableType,
+                        'usuario_id'        => auth()->id(),
+                        'tiempo_garantia_meses' => $request->input('tiempo_garantia_meses') ?? null, 
+                    ]);
+                }
+            }
+        }
+
+        // Lógica para asociar documentos existentes
+        if ($request->filled('factura_ids')) {
+            Documento::whereIn('id', $request->factura_ids)
+                ->update([
+                    'documentable_id'   => $model->id,
+                    'documentable_type' => $documentableType,
+                ]);
+        }
+
+        if ($request->filled('garantia_ids')) {
+            Documento::whereIn('id', $request->garantia_ids)
+                ->update([
+                    'documentable_id'       => $model->id,
+                    'documentable_type'     => $documentableType,
+                    'tiempo_garantia_meses' => $request->tiempo_garantia_meses,
+                ]);
+        }
+    }
+
+    // Método para descargar documentos
+    public function descargarDocumento($id)
+    {
+        $documento = Documento::findOrFail($id);
+        
+        // Asumiendo que 'ruta_s3' contiene la ruta de almacenamiento (e.g., documentos/archivo.pdf)
+        $rutaCompleta = $documento->ruta_s3; 
+
+        // ✅ CORRECCIÓN: Especificar el disco 'public'
+        if (!Storage::disk('public')->exists($rutaCompleta)) {
+            return back()->with('error', 'El archivo no se encontró en el servidor.');
+        }
+        
+        $nombreDescarga = $documento->tipo . '-' . $documento->nombre_archivo;
+
+        // ✅ CORRECCIÓN: Especificar el disco 'public'
+        return Storage::disk('public')->download($rutaCompleta, $nombreDescarga);
+    }
+    
+    // Método para buscar con IA (Gemini)
     public function buscarConIA(Request $request)
     {
         $serialNumber = $request->query('numero_serie'); 
@@ -330,13 +475,8 @@ class RegistroEquipoController extends Controller
             return response()->json(['error' => 'La clave de API (GEMINI_API_KEY) no está configurada.'], 500);
         }
 
-        // 1. Definir Endpoint y Modelo de Gemini
         $endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
-        
-        // 2. Definir el prompt y la estructura JSON
-        $prompt = "Actúa como un experto en inventario de TI. Busca en la web el modelo de equipo asociado al número de serie o fragmento de serie: '{$serialNumber}'. Es muy común que un fragmento de serie esté asociado a varios modelos. Si encuentras más de uno, devuelve una lista de posibles modelos. Responde ÚNICAMENTE con un objeto JSON que contenga un array de posibles modelos bajo la clave 'opciones_modelos'. Cada elemento del array debe ser un objeto con las siguientes claves: 'marca', 'modelo', 'tipo_equipo_nombre' (ej: Notebook), 'precio' (valor numérico estimado) y 'especificaciones_clave' (string de resumen). Si solo encuentras un resultado claro, devuelve un array de un solo elemento. Si no encuentras nada, devuelve un array vacío. Asegúrate que el precio sea numérico.";
-        
-        // 3. Esquema JSON para la respuesta (pedimos un array de objetos)
+        $prompt = "Actúa como un experto en inventario de TI. Busca en la web el modelo de equipo asociado al número de serie o fragmento de serie: '{$serialNumber}'. Es muy común que un fragmento de serie esté asociado a varios modelos. Responde ÚNICAMENTE con un objeto JSON que contenga un array de posibles modelos bajo la clave 'opciones_modelos'. Cada elemento del array debe ser un objeto con las siguientes claves: 'marca', 'modelo', 'tipo_equipo_nombre' (ej: Notebook), 'precio' (valor numérico estimado) y 'especificaciones_clave' (string de resumen). Si solo encuentras un resultado claro, devuelve un array de un solo elemento. Si no encuentras nada, devuelve un array vacío. Asegúrate que el precio sea numérico.";
         $responseSchema = [
             'type' => 'OBJECT',
             'properties' => [
@@ -357,7 +497,6 @@ class RegistroEquipoController extends Controller
             'required' => ['opciones_modelos']
         ];
         
-        // 4. Preparar la solicitud a la API de Gemini
         try {
             $response = Http::withHeaders(['Content-Type' => 'application/json'])
                 ->timeout(30)
@@ -369,23 +508,14 @@ class RegistroEquipoController extends Controller
                     ]
                 ]);
 
-            // 5. Manejar la respuesta
             if ($response->successful()) {
                 $content = $response->json();
-                
-                // Extracción segura del texto JSON de la respuesta de Gemini
                 $iaResponseText = trim($content['candidates'][0]['content']['parts'][0]['text'] ?? '');
                 $data = json_decode($iaResponseText, true);
 
-                // 6. Procesar las opciones
                 if (json_last_error() === JSON_ERROR_NONE && isset($data['opciones_modelos'])) {
                     $opciones = $data['opciones_modelos'];
                     
-                    if (empty($opciones)) {
-                        return response()->json(['success' => true, 'opciones' => [], 'error' => 'No se encontraron modelos coincidentes.'], 200);
-                    }
-
-                    // Procesar las opciones para incluir el ID local de TipoEquipo
                     $opcionesProcesadas = collect($opciones)->map(function ($opcion) {
                         $tipoNombre = $opcion['tipo_equipo_nombre'] ?? null;
                         $tipoEquipoId = null;

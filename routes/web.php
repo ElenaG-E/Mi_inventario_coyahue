@@ -114,6 +114,7 @@ Route::middleware(['auth'])->group(function () {
     // Registro de equipos
     Route::get('/registro-equipo', [RegistroEquipoController::class, 'create'])->name('registro_equipo.create');
     Route::post('/registro-equipo', [RegistroEquipoController::class, 'store'])->name('registro_equipo.store');
+    Route::get('/documento/descargar/{id}', [RegistroEquipoController::class, 'descargarDocumento'])->name('documento.descargar');
 
     // Registro de insumos
     Route::get('/registro-insumo', [RegistroEquipoController::class, 'create'])->name('registro_insumo.create');

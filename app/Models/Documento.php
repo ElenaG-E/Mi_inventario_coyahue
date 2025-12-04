@@ -21,11 +21,20 @@ class Documento extends Model
         'fecha_subida',
         'usuario_id',
         'tiempo_garantia_meses',
+        // ✅ CORRECCIÓN CLAVE: Campos polimórficos añadidos
+        'documentable_id',
+        'documentable_type',
     ];
 
     public $timestamps = false;
 
-    // Relación con equipos
+    // Relación polimórfica: Un documento pertenece a un Equipo o un Insumo.
+    public function documentable()
+    {
+        return $this->morphTo();
+    }
+
+    // Relación con equipos (Se mantienen las relaciones belongsToMany por contexto del proyecto)
     public function equipos()
     {
         return $this->belongsToMany(Equipo::class, 'documento_equipo', 'documento_id', 'equipo_id')

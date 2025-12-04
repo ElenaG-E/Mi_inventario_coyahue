@@ -1,3 +1,35 @@
+/*
+ * Gestión Proveedores CSS Styles
+ */
+
+.table-responsive {
+    margin-top: 20px;
+}
+
+/* Cabecera de la tabla */
+.table th {
+    background-color: #f2f2f2;
+    color: #343a40;
+    font-weight: 600;
+}
+
+/* Estilo para filas activas/inactivas si se usa*/
+.table .estado-activo {
+    color: #28a745; /* Verde */
+    font-weight: 600;
+}
+
+.table .estado-inactivo {
+    color: #dc3545; /* Rojo */
+}
+
+/* Botón de acción rápida */
+#btn-agregar-proveedor {
+    margin-top: 20px;
+}
+
+/* Los estilos genéricos que tenías (vertical-align, etc.) se pueden mantener
+   o se asume que Bootstrap ya los maneja, pero los añadimos al final para no perderlos */
 .card-title {
     font-weight: 600;
 }

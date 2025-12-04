@@ -1,12 +1,69 @@
-.card-dashboard {
-    border-radius: 10px;
-    transition: transform 0.3s;
-    border: none;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+/*
+ * Dashboard CSS Styles
+ * Estilos específicos para la vista del dashboard.
+ */
+
+/* Tarjetas KPI */
+.card.shadow {
+    transition: transform 0.3s ease;
 }
-.card-dashboard:hover {
+
+.card.shadow:hover {
     transform: translateY(-5px);
 }
-.bg-orange {
-    background: #ff6b35 !important;
+
+.card-body .row {
+    align-items: center;
+}
+
+/* Colores de borde para KPI */
+.border-left-primary {
+    border-left: 0.25rem solid #007bff !important;
+}
+
+.border-left-success {
+    border-left: 0.25rem solid #28a745 !important;
+}
+
+.border-left-info {
+    border-left: 0.25rem solid #17a2b8 !important;
+}
+
+.border-left-warning {
+    border-left: 0.25rem solid #ffc107 !important;
+}
+
+/* Header personalizado para gráficos */
+.card-header.bg-orange {
+    background-color: #dc8428 !important; /* Asegura el color naranja */
+}
+
+/* Estilo para el lector QR */
+#popupQR {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 2000; /* Asegura que esté sobre todo */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.qr-content {
+    background: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    max-width: 400px;
+}
+
+#qr-reader {
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto 20px;
+    border: 1px solid #ccc;
 }

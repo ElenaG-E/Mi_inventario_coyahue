@@ -78,14 +78,9 @@ class Insumo extends Model
      * ============================ */
     public function documentos()
     {
-        return $this->belongsToMany(
-            Documento::class,
-            'documento_equipo',
-            'insumo_id',
-            'documento_id'
-        );
+    // Cambiar a MorphMany
+    return $this->morphMany(Documento::class, 'documentable');
     }
-
     /* ============================
      * Movimientos
      * ============================ */

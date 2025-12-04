@@ -1,8 +1,72 @@
-.bg-orange {
-    background: #ff6b35 !important;
+/*
+ * Inventario CSS Styles
+ * Estilos para la tabla principal de inventario y filtros.
+ */
+
+/* Contenedor de filtros */
+.filters-container {
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 20px;
 }
-.table thead th {
-    background: #ff6b35;
+
+/* Estilos de botones de filtros */
+.btn-filter-action {
+    width: 100%;
+}
+
+/* Tabs */
+.nav-tabs .nav-link {
+    color: #495057;
+}
+
+.nav-tabs .nav-link.active {
+    color: #dc8428;
+    border-color: #dc8428 #dc8428 #fff;
+}
+
+/* Tabla de Inventario */
+.table-inventory {
+    font-size: 0.9rem;
+}
+
+.table-inventory th {
+    background-color: #e9ecef;
+}
+
+/* Badge de estado del equipo */
+.badge-status {
+    padding: 0.4em 0.6em;
+    font-weight: 600;
+    border-radius: 0.25rem;
+}
+
+/* Estados específicos */
+.badge-disponible {
+    background-color: #28a745; /* Verde */
     color: white;
-    border: none;
+}
+
+.badge-asignado {
+    background-color: #007bff; /* Azul */
+    color: white;
+}
+
+.badge-mantencion {
+    background-color: #ffc107; /* Amarillo */
+    color: #333;
+}
+
+.badge-baja {
+    background-color: #dc3545; /* Rojo */
+    color: white;
+}
+
+/* Autocompletado del buscador principal */
+.ui-autocomplete {
+    max-height: 250px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 1050; 
 }
